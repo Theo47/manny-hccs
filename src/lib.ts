@@ -35,6 +35,7 @@ import {
   myLocation,
 } from "kolmafia";
 import { $effect, $effects, $item, $location, $skill, Macro } from "libram";
+import { item } from "libram/dist/resources/SourceTerminal";
 
 export function getPropertyInt(name: string) {
   const str = getProperty(name);
@@ -357,3 +358,54 @@ export function kill() {
     .trySkillRepeat($skill`Saucegeyser`)
     .attack();
 }
+export function eatPizza(it1: Item, it2: Item, it3: Item, it4: Item)
+{
+  if (availableAmount($item`diabolic pizza`) > 0) {
+    throw "Already have a pizza";
+  }
+  if (availableAmount(it1) === 0 || availableAmount(it2) === 0 || availableAmount(it3) === 0 || availableAmount(it4) === 0)
+  {
+    throw "Missing items for pizza.";
+  }
+  visitUrl("campground.php?action=makepizza&pizza=" + toInt(it1) + ',' + toInt(it2) + ',' + toInt(it3) + ',' + toInt(it4))
+  eat(1, $item`diabolic pizza`);
+} 
+
+export function pizzaEffect(ef: Effect, it1: Item, it2: Item, it3: Item, it4: Item)
+{
+  if (haveEffect(ef) === 0) {
+    eatPizza(it1, it2, it3, it4);
+    if (haveEffect(ef) === 0) {
+      throw "Failed to get effect " + ef.name;
+    } else {
+      throw "You already have " + ef.name;
+    }
+  }
+}
+
+/*
+void eat_pizza(item it1, item it2, item it3, item it4) {
+  if (available_amount($item[diabolic pizza]) > 0) {
+      error('Already have a pizza.');
+  }
+  if (available_amount(it1) == 0 || available_amount(it2) == 0 || available_amount(it3) == 0 || available_amount(it4) == 0) {
+      error('Missing items for pizza.');
+  }
+  visit_url('campground.php?action=makepizza&pizza=' + it1.to_int() + ',' + it2.to_int() + ',' + it3.to_int() + ',' + it4.to_int());
+  eat(1, $item[diabolic pizza]);
+}
+
+void pizza_effect(effect ef, item it1, item it2, item it3, item it4) {
+    if (have_effect(ef) == 0) {
+        eat_pizza(it1, it2, it3, it4);
+        if (have_effect(ef) == 0) {
+            error('Failed to get effect ' + ef.name + '.');
+        }
+    } else {
+        print('Already have effect ' + ef.name + '.');
+    }
+}
+
+
+*/
+

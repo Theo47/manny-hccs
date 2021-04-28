@@ -901,7 +901,7 @@ if (!testDone(TEST_HP)) {
       setChoice(1322, 2);
       adventureMacroAuto(
         $location`The Neverending Party`,
-        Macro.if_('!monstername "sausage goblin"', new Macro().step("abort"))
+        Macro.if_('!monstername "sausage goblin"', Macro.step("abort"))
           .trySkill(Skill.get("Lecture on Relativity"))
           .step(justKillTheThing)
       );
@@ -1744,6 +1744,8 @@ if (!testDone(TEST_ITEM)) {
       setAutoAttack(0);
     } else throw "Something went wrong getting pirate DNA.";
   }
+
+  useDefaultFamiliar();
 
   if (haveEffect($effect`Bat-Adjacent Form`) === 0) {
     if (getPropertyInt("_reflexHammerUsed") >= 3) error("Out of reflex hammers!");
