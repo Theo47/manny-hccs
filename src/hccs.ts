@@ -16,6 +16,7 @@ import {
   mapMonster,
   ensureOde,
   ensureSong,
+  pizzaEffect,
 } from "./lib";
 import {
   abort,
@@ -139,11 +140,10 @@ const START_TIME = gametimeToInt();
 const justKillTheThing = Macro.trySkill($skill`Curse of Weaksauce`)
   .trySkill($skill`Micrometeorite`)
   .trySkill($skill`Sing Along`)
-  .trySkill($skill`Stuffed Mortar Shell`)
-  .skill($skill`Saucestorm`)
-  .skill($skill`Saucegeyser`)
+  .skill($skill`candyblast`)
   .step("repeat");
 
+/*
 const defaultFamiliar = $familiar`melodramedary`;
 const defaultFamiliarEquipment = $item`dromedary drinking helmet`;
 // TODO: make this choose camel until 100 spit, then pixie for absinthe, then ???
@@ -151,6 +151,24 @@ function useDefaultFamiliar() {
   useFamiliar(defaultFamiliar);
   if (defaultFamiliarEquipment !== $item`none`) {
     equip(defaultFamiliarEquipment);
+  }
+}
+*/
+function useDefaultFamiliar() {
+  if (get("camelSpit") < 100 && !testDone(TEST_WEAPON)) {
+    useFamiliar($familiar`melodramedary`);
+    equip($item`dromedary drinking helmet`);
+  } else if (availableAmount($item`x`) === 0 && !testDone(TEST_SPELL)) {
+    useFamiliar($familiar`xo skeleton`);
+  } else if (
+    availableAmount($item`rope`) < 1 &&
+    availableAmount($item`burning newspaper`) + availableAmount($item`burning paper crane`) < 1
+  ) {
+    useFamiliar($familiar`Garbage Fire`);
+  } else if (get("_absintheDrops") === 0) {
+    useFamiliar($familiar`green pixie`);
+  } else {
+    useFamiliar($familiar`machine elf`);
   }
 }
 
@@ -189,7 +207,7 @@ function wishEffect(ef: Effect) {
     print("Already have effect " + ef.name + ".");
   }
 }
-
+/*
 // Checks that you don't already have the tonic or effect and if your syringe has the right phylum and if so, makes the appropriate tonic.
 function geneTonic(ph: string) {
   if (ph === "dude" || ph === "weird") {
@@ -226,7 +244,7 @@ function geneTonic(ph: string) {
     }
   }
 }
-
+*/
 /*
 // rewrite this to be better
 function geneTonic1(ph: string) {
@@ -654,10 +672,12 @@ if (!testDone(TEST_HP)) {
 
   // 10 snojo fights to while +stat is on, also getting ice rice
   if (get("_snojoFreeFights") < 10) {
-    useFamiliar($familiar`garbage fire`);
+    // useFamiliar($familiar`garbage fire`);
+    useDefaultFamiliar();
+    equip($item`dromedary drinking helmet`);
     setProperty("choiceAdventure1310", "3"); // myst for ice rice, because it sells for more
     visitUrl("place.php?whichplace=snojo&action=snojo_controller");
-    if (availableAmount($item`gene tonic: construct`) === 0 && get("dnaSyringe") !== "construct") {
+    /* if (availableAmount($item`gene tonic: construct`) === 0 && get("dnaSyringe") !== "construct") {
       adventureMacroAuto(
         $location`The X-32-F Combat Training Snowman`,
         Macro.item($item`DNA extraction syringe`).trySkillRepeat($skill`saucestorm`)
@@ -669,16 +689,18 @@ if (!testDone(TEST_HP)) {
     }
     useFamiliar($familiar`Melodramedary`);
     equip($item`dromedary drinking helmet`);
+    */
     while (get("_snojoFreeFights") < 10) {
+      useDefaultFamiliar();
       adventureMacroAuto($location`The X-32-F Combat Training Snowman`, kill());
     }
   }
-  if (
+  /* if (
     availableAmount($item`burning newspaper`) > 0 &&
     availableAmount($item`burning paper crane`) < 1
   ) {
     cliExecute("create 1 burning paper crane");
-  }
+  } */
 
   // Don't use Kramco here.
   equip($slot`off-hand`, $item`none`);
@@ -750,7 +772,7 @@ if (!testDone(TEST_HP)) {
     if (handlingChoice()) runChoice(3);
     // setProperty("mappingMonsters", "false");
   }
-
+  /*
   // become a human fish hybrid
   if (get("_dnaHybrid") === false && get("dnaSyringe") !== "fish") {
     // tryEquip($item`powerful glove`);
@@ -786,7 +808,7 @@ if (!testDone(TEST_HP)) {
   if (get("_dnaHybrid") === false && get("dnaSyringe") === "fish") {
     cliExecute("camp dnainject");
   }
-
+*/
   if (!get("hasRange")) {
     ensureItem(1, $item`Dramatic&trade; range`);
     use(1, $item`Dramatic&trade; range`);
@@ -1401,6 +1423,13 @@ if (!testDone(TEST_FAMILIAR)) {
     setAutoAttack(0);
   }
 
+  // make a crane
+  if (availableAmount($item`burning newspaper`) > 0) {
+    cliExecute("make 1 burning paper crane");
+  } else {
+    throw "Failed to make a paper crane";
+  }
+
   // checking here to see if we had a tome summon for a cracker or if we should use BBB
   if (availableAmount($item`cracker`) > 0) {
     useFamiliar($familiar`exotic parrot`);
@@ -1453,7 +1482,7 @@ if (!testDone(TEST_WEAPON)) {
       error("Wrong painting.");
     }
   } */
-
+  // I think this needs to be a cocktail shrimp?
   if (!get("_chateauMonsterFought")) {
     // const chateauText = visitUrl("place.php?whichplace=chateau", false);
     // const match = chateauText.match(/alt="Painting of an? ([^(]*) .1."/);
@@ -1634,6 +1663,21 @@ if (!testDone(TEST_SPELL)) {
 
   cliExecute("briefcase e spell");
 
+  // pulls wrench from deck
+  if (getPropertyInt("_deckCardsDrawn") === 10) {
+    cliExecute("cheat 1952 Mickey Mantle");
+  }
+
+  // let's do a TOX1952 pizza
+  cliExecute("farfuture food");
+  pizzaEffect(
+    $effect`toxic vengeance`,
+    $item`tea, earl grey, hot`,
+    $item`ointment of the occult`,
+    $item`x`,
+    $item`1952 Mickey Mantle`
+  );
+
   // Get inner elf for spell damage
   if (haveEffect($effect`inner elf`) === 0 && getPropertyInt("_snokebombUsed") < 3) {
     cliExecute("/whitelist hobopolis vacation home");
@@ -1714,12 +1758,13 @@ if (!testDone(TEST_ITEM)) {
   // use abstraction: certainty if you have it
   // ensureEffect($effect`certainty`);
 
-  // pulls wheel of fortune from deck, gets rope and wrench for later
-  if (getPropertyInt("_deckCardsDrawn") === 5) {
+  // pulls wheel of fortune from deck
+  if (getPropertyInt("_deckCardsDrawn") === 10) {
     cliExecute("cheat buff items");
   }
+
   // get pirate DNA and make a gene tonic
-  if (get("dnaSyringe") !== "pirate" && haveEffect($effect`Human-Pirate Hybrid`) === 0) {
+  /* if (get("dnaSyringe") !== "pirate" && haveEffect($effect`Human-Pirate Hybrid`) === 0) {
     equip($slot`acc1`, $item`Kremlin\'s Greatest Briefcase`);
     if (get("_kgbTranquilizerDartUses") >= 3) {
       error("Out of KGB banishes");
@@ -1743,7 +1788,7 @@ if (!testDone(TEST_ITEM)) {
       ensureEffect($effect`Human-Pirate Hybrid`);
       setAutoAttack(0);
     } else throw "Something went wrong getting pirate DNA.";
-  }
+  } */
 
   useDefaultFamiliar();
 

@@ -354,7 +354,7 @@ export function kill() {
     .trySkill($skill`Micrometeorite`)
     .trySkill($skill`Sing Along`)
     .trySkill($skill`Stuffed Mortar Shell`)
-    .trySkill($skill`Saucestorm`)
+    .trySkill($skill`Candyblast`)
     .trySkillRepeat($skill`Saucegeyser`)
     .attack();
 }
@@ -382,30 +382,4 @@ export function pizzaEffect(ef: Effect, it1: Item, it2: Item, it3: Item, it4: It
     }
   }
 }
-
-/*
-void eat_pizza(item it1, item it2, item it3, item it4) {
-  if (available_amount($item[diabolic pizza]) > 0) {
-      error('Already have a pizza.');
-  }
-  if (available_amount(it1) == 0 || available_amount(it2) == 0 || available_amount(it3) == 0 || available_amount(it4) == 0) {
-      error('Missing items for pizza.');
-  }
-  visit_url('campground.php?action=makepizza&pizza=' + it1.to_int() + ',' + it2.to_int() + ',' + it3.to_int() + ',' + it4.to_int());
-  eat(1, $item[diabolic pizza]);
-}
-
-void pizza_effect(effect ef, item it1, item it2, item it3, item it4) {
-    if (have_effect(ef) == 0) {
-        eat_pizza(it1, it2, it3, it4);
-        if (have_effect(ef) == 0) {
-            error('Failed to get effect ' + ef.name + '.');
-        }
-    } else {
-        print('Already have effect ' + ef.name + '.');
-    }
-}
-
-
-*/
 
