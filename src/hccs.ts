@@ -1009,11 +1009,10 @@ if (!testDone(TEST_HP)) {
 
   equip($slot`acc3`, $item`Lil\' Doctor&trade; Bag`);
 
-  // 14 free NEP fights, using mob hit and xray
+  // 13 free NEP fights, using xrays
   while (
     getPropertyInt("_neverendingPartyFreeTurns") < 10 ||
-    (haveSkill($skill`Chest X-Ray`) && getPropertyInt("_chestXRayUsed") < 3) ||
-    (haveSkill($skill`Gingerbread Mob Hit`) && !getPropertyBoolean("_gingerbreadMobHitUsed"))
+    (haveSkill($skill`Chest X-Ray`) && getPropertyInt("_chestXRayUsed") < 3)
   ) {
     ensureNpcEffect($effect`Glittering Eyelashes`, 5, $item`glittery mascara`);
     ensureSong($effect`The Magical Mojomuscular Melody`);
@@ -1039,10 +1038,7 @@ if (!testDone(TEST_HP)) {
     } else if (getPropertyInt("_neverendingPartyFreeTurns") < 10) {
       adventureMacroAuto($location`The Neverending Party`, Macro.step(justKillTheThing));
     } else {
-      adventureMacroAuto(
-        $location`The Neverending Party`,
-        Macro.trySkill($skill`chest x-ray`).trySkill($skill`gingerbread mob hit`)
-      );
+      adventureMacroAuto($location`The Neverending Party`, Macro.trySkill($skill`chest x-ray`));
     }
   }
 
@@ -1087,10 +1083,9 @@ if (!testDone(TEST_MUS)) {
   if (myClass() === $class`Pastamancer`) useSkill(1, $skill`Bind Undead Elbow Macaroni`);
   else ensurePotionEffect($effect`Expert Oiliness`, $item`oil of expertise`);
 
-  if (myInebriety() === 0) {
-    ensureOde(4);
-    tryUse(1, $item`astral six-pack`);
-    drink(4, $item`astral pilsner`);
+  if (myInebriety() === 0 && haveEffect($effect`1701`) === 0) {
+    ensureOde(3);
+    cliExecute("drink 1 hot socks");
   }
 
   ensureEffect($effect`Big`);
@@ -1182,7 +1177,6 @@ if (!testDone(TEST_MOX)) {
 
 if (!testDone(TEST_HOT_RES)) {
   ensureMpSausage(500);
-  useDefaultFamiliar();
   fightSausageIfGuaranteed();
 
   // Make sure no moon spoon.
@@ -1203,17 +1197,18 @@ if (!testDone(TEST_HOT_RES)) {
     equip($item`Fourth of May Cosplay Saber`);
     equip($item`vampyric cloake`);
     setProperty("choiceAdventure1387", "3");
-    mapMonster($location`LavaCo&trade; Lamp Factory`, $monster`Factory worker (female)`);
-    withMacro(
-      Macro.skill($skill`become a cloud of mist`)
+    // mapMonster($location`LavaCo&trade; Lamp Factory`, $monster`Factory worker (female)`);
+    adventureMacro(
+      $location`LavaCo&trade; Lamp Factory`,
+      Macro.while_("!monstername factory worker", Macro.skill($skill`CHEAT CODE: Replace Enemy`))
+        .skill($skill`become a cloud of mist`)
         .skill($skill`meteor shower`)
-        .skill($skill`use the force`),
-      runCombat
+        .skill($skill`use the force`)
     );
-    while (lastChoice() === 1387 && handlingChoice()) {
+    /* while (lastChoice() === 1387 && handlingChoice()) {
       runChoice(3);
-    }
-    setProperty("mappingMonsters", "false");
+    } */
+    // setProperty("mappingMonsters", "false");
   }
 
   // synth hot
@@ -1407,7 +1402,67 @@ if (!testDone(TEST_FAMILIAR)) {
   ensureEffect($effect`Leash of Linguini`);
   ensureEffect($effect`Empathy`);
   ensureEffect($effect`robot friends`);
-  ensureEffect($effect`human-machine hybrid`);
+  ensureEffect($effect`shrimpin\' ain\'t easy`);
+  // ensureEffect($effect`human-machine hybrid`);
+
+  if (
+    haveEffect($effect`whole latte love`) === 0 &&
+    availableAmount($item`gingerbread spice latte`) === 0
+  ) {
+    useFamiliar($familiar`chocolate lab`);
+    maximize("sprinkle drop", false);
+    if (!get("_gingerbreadClockAdvanced")) {
+      visitUrl("adventure.php?snarfblat=477");
+      runChoice(1);
+    }
+    if (availableAmount($item`sprinkles`) < 50) {
+      adventureMacroAuto(
+        $location`Gingerbread Upscale Retail District`,
+        Macro.if_("monstername gingerbread gentrifier", Macro.skill($skill`macrometeorite`)).skill(
+          $skill`shattering punch`
+        )
+      );
+      setAutoAttack(0);
+    }
+    if (availableAmount($item`sprinkles`) >= 50) {
+      // equip($slot`acc3`, $item`kremlin's greatest briefcase`);
+      useFamiliar($familiar`frumious bandersnatch`);
+      ensureEffect($effect`ode to booze`);
+      setChoice(1208, 3);
+      while (
+        availableAmount($item`gingerbread spice latte`) === 0 &&
+        haveEffect($effect`whole latte love`) === 0
+      ) {
+        adventureMacro($location`Gingerbread Upscale Retail District`, Macro.step("runaway"));
+      }
+    } else {
+      throw "Something went wrong getting sprinkles";
+    }
+    use($item`gingerbread spice latte`);
+    useDefaultFamiliar();
+  }
+
+  useDefaultFamiliar();
+  if (!get("_chateauMonsterFought")) {
+    // const chateauText = visitUrl("place.php?whichplace=chateau", false);
+    // const match = chateauText.match(/alt="Painting of an? ([^(]*) .1."/);
+    Macro.skill($skill`feel envy`)
+      .skill($skill`shattering punch`)
+      .setAutoAttack();
+    visitUrl("place.php?whichplace=chateau&action=chateau_painting", false);
+    runCombat();
+  } else {
+    throw "You already fought your painting";
+  }
+
+  if (haveEffect($effect`Meteor Showered`) === 0) {
+    equip($item`Fourth of May Cosplay Saber`);
+    adventureMacroAuto(
+      $location`The Neverending Party`,
+      Macro.trySkill($skill`Meteor Shower`).trySkill($skill`Use the Force`)
+    );
+    setAutoAttack(0);
+  }
 
   if (availableAmount($item`cracker`) > 0 && getPropertyInt("tomeSummons") < 3) {
     useFamiliar($familiar`Exotic Parrot`);
@@ -1449,6 +1504,14 @@ if (!testDone(TEST_FAMILIAR)) {
 if (!testDone(TEST_WEAPON)) {
   fightSausageIfGuaranteed();
 
+  // get "do you crush what I crush"
+  if (haveEffect($effect`do you crush what I crush?`) == 0) {
+    useFamiliar($familiar`ghost of crimbo carols`);
+    adventureMacroAuto($location`The Dire Warren`, Macro.skill($skill`feel hatred`));
+    setAutoAttack(0);
+    useDefaultFamiliar();
+  }
+
   // Get inner elf for weapon damage
   if (haveEffect($effect`inner elf`) === 0 && getPropertyInt("_snokebombUsed") < 3) {
     cliExecute("/whitelist hobopolis vacation home");
@@ -1462,7 +1525,7 @@ if (!testDone(TEST_WEAPON)) {
     print("Something went wrong with getting inner elf");
   }
 
-  // Paint crayon elf for DNA and ghost buff (Saber YR)
+  // get shrimp cocktail
   /*
   if (!getPropertyBoolean("_chateauMonsterFought")) {
     const chateauText = visitUrl("place.php?whichplace=chateau", false);
@@ -1483,27 +1546,9 @@ if (!testDone(TEST_WEAPON)) {
     }
   } */
   // I think this needs to be a cocktail shrimp?
-  if (!get("_chateauMonsterFought")) {
-    // const chateauText = visitUrl("place.php?whichplace=chateau", false);
-    // const match = chateauText.match(/alt="Painting of an? ([^(]*) .1."/);
-    // if (getPropertyInt("camelSpit") === 100) useFamiliar($familiar`Melodramedary`);
-    useFamiliar($familiar`ghost of crimbo carols`);
-    equip($slot`acc3`, $item`Lil\' Doctor&trade; Bag`);
-    if (get("_reflexHammerUsed") > 2) {
-      error("You do not have any banishes left");
-    }
-    Macro.item($item`DNA extraction syringe`)
-      .skill($skill`reflex hammer`)
-      .setAutoAttack();
-    visitUrl("place.php?whichplace=chateau&action=chateau_painting", false);
-    runCombat();
-    useDefaultFamiliar();
-  } else {
-    throw "You already fought your painting";
-  }
 
-  geneTonic("elf");
-  ensureEffect($effect`human-elf hybrid`);
+  // geneTonic("elf");
+  // ensureEffect($effect`human-elf hybrid`);
 
   // maybe try just setting autoattack to HCCS_Spit
 
@@ -1659,7 +1704,7 @@ if (!testDone(TEST_SPELL)) {
     retrieveItem(1, $item`weeping willow wand`);
   }
 
-  ensureItem(1, $item`obsidian nutcracker`);
+  // ensureItem(1, $item`obsidian nutcracker`);
 
   cliExecute("briefcase e spell");
 
