@@ -534,6 +534,7 @@ if (!testDone(TEST_HP)) {
   // if (get_property('_horsery') != 'crazy horse') cli_execute('horsery crazy');
 
   // Tune moon sign to Blender. Have to do this now to get chewing gum.
+  /*
   if (!getPropertyBoolean("moonTuned")) {
     if (getPropertyInt("_campAwaySmileBuffs") === 0) {
       visitUrl("place.php?whichplace=campaway&action=campaway_sky");
@@ -546,7 +547,7 @@ if (!testDone(TEST_HP)) {
 
     // Actually tune the moon.
     visitUrl("inv_use.php?whichitem=10254&doit=96&whichsign=8");
-  }
+  } */
 
   cliExecute("retrocape mysticality thrill");
 
@@ -647,6 +648,12 @@ if (!testDone(TEST_HP)) {
     const pg = runChoice(3);
     if (containsText(pg, "[free]")) runChoice(2);
     runChoice(5);
+    runChoice(4);
+  }
+
+  if (get("haveBoxingDaydreamHardcore") === false) {
+    visitUrl("/place.php?whichplace=town_wrong&action=townwrong_boxingdaycare");
+    runChoice(1);
     runChoice(4);
   }
 
@@ -1295,6 +1302,26 @@ if (!testDone(TEST_HOT_RES)) {
 
   // drink hot socks here if you're a tryhard
 
+  // eat a fam wt pizza here why not
+  if (haveEffect($effect`optimist primal`) === 0) {
+    if (availableAmount($item`blood-faced volleyball`) === 0) {
+      ensureSewerItem(1, $item`volleyball`);
+      ensureSewerItem(1, $item`seal tooth`);
+      use($item`seal tooth`);
+      use($item`volleyball`);
+    }
+    if (availableAmount($item`dense meat stack`) === 0) {
+      cliExecute("create 1 dense meat stack");
+    }
+    pizzaEffect(
+      $effect`optimist primal`,
+      $item`oil of expertise`,
+      $item`perfect ice cube`,
+      $item`dense meat stack`,
+      $item`blood-faced volleyball`
+    );
+  }
+
   // Beach comb buff.
   ensureEffect($effect`Hot-Headed`);
 
@@ -1403,6 +1430,7 @@ if (!testDone(TEST_FAMILIAR)) {
   ensureEffect($effect`Empathy`);
   ensureEffect($effect`robot friends`);
   ensureEffect($effect`shrimpin\' ain\'t easy`);
+  ensureEffect($effect`boxing day glow`);
   // ensureEffect($effect`human-machine hybrid`);
 
   if (
@@ -1440,6 +1468,22 @@ if (!testDone(TEST_FAMILIAR)) {
     }
     use($item`gingerbread spice latte`);
     useDefaultFamiliar();
+    setAutoAttack(0);
+  }
+
+  if (haveEffect($effect`Man\s worst enemy`) === 0) {
+    if (availableAmount($item`tiny bottle of absinthe`) === 0) {
+      throw "You don't have any absinthe!";
+    } else {
+      use($item`tiny bottle of absinthe`);
+      mapMonster($location`The Stately Pleasure Dome`, $monster`toothless mastiff bitch`);
+      withMacro(Macro.skill($skill`feel envy`).skill($skill`gingerbread mob hit`), runCombat);
+    }
+    if (availableAmount($item`disintegrating spiky collar`) > 0) {
+      use($item`disintegrating spiky collar`);
+    } else {
+      throw "Something went wrong getting a collar";
+    }
   }
 
   useDefaultFamiliar();
@@ -1467,6 +1511,14 @@ if (!testDone(TEST_FAMILIAR)) {
   if (availableAmount($item`cracker`) > 0 && getPropertyInt("tomeSummons") < 3) {
     useFamiliar($familiar`Exotic Parrot`);
     equip($item`cracker`);
+  }
+
+  if (haveEffect($effect`Smart Drunk`) === 0) {
+    if (myInebriety() > 5) {
+      throw "You're too drunk!";
+    }
+    ensureOde(10);
+    drink(1, $item`vintage smart drink`);
   }
 
   if (haveEffect($effect`Meteor Showered`) === 0) {
