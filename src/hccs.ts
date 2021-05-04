@@ -165,8 +165,8 @@ function useDefaultFamiliar() {
     availableAmount($item`burning newspaper`) + availableAmount($item`burning paper crane`) < 1
   ) {
     useFamiliar($familiar`Garbage Fire`);
-  } else if (get("_absintheDrops") === 0) {
-    useFamiliar($familiar`green pixie`);
+  } else if (availableAmount($item`short stack of pancakes`) === 0) {
+    useFamiliar($familiar`short-order cook`);
   } else {
     useFamiliar($familiar`machine elf`);
   }
@@ -939,10 +939,10 @@ if (!testDone(TEST_HP)) {
     print("YOU FUCKED UP THE KRAMCO CHAIN AGAIN, YOU DUMBASS! Go kill crayon elves instead.");
   }
 
-  useDefaultFamiliar();
   equip($slot`acc2`, $item`backup camera`);
   equip($slot`shirt`, $item`none`);
   while (getProperty("feelNostalgicMonster") === "sausage goblin" && get("_backUpUses") < 11) {
+    useDefaultFamiliar();
     adventureMacroAuto(
       $location`Noob Cave`,
       Macro.trySkill($skill`back-up to your last enemy`).step(justKillTheThing)
@@ -1031,6 +1031,8 @@ if (!testDone(TEST_HP)) {
     ensureEffect($effect`Feeling Excited`);
 
     cliExecute("mood execute");
+
+    useDefaultFamiliar();
 
     // Otherwise fight.
     setChoice(1324, 5);
