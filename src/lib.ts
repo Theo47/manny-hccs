@@ -138,7 +138,7 @@ export function ensurePotionEffect(ef: Effect, potion: Item) {
 export function ensureEffect(ef: Effect, turns = 1) {
   if (haveEffect(ef) < turns) {
     if (!cliExecute(ef.default) || haveEffect(ef) === 0) {
-      throw 'Failed to get effect " + ef.name + ".';
+      throw 'Failed to get effect ' + ef.name + '.';
     }
   } else {
     print(`Already have effect ${ef.name}.`);
@@ -315,10 +315,11 @@ const allSongs = Skill.all()
   )
   .map((skill) => toEffect(skill));
 export function openSongSlot(song: Effect) {
+  if (haveEffect(song)) return;
   for (const songSlot of songSlots) {
     if (songSlot.includes(song)) {
       for (const shruggable of songSlot) {
-        shrug(shruggable);
+        if (shruggable!=song) shrug(shruggable);
       }
     }
   }
