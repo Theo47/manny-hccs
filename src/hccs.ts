@@ -88,7 +88,8 @@ import {
   visit,
   visitUrl,
   wait,
-  familiarWeight
+  familiarWeight,
+  ceil
 } from "kolmafia";
 import {
   $class,
@@ -166,7 +167,8 @@ const justKillTheThing = Macro.trySkill($skill`Curse of Weaksauce`)
 // Sweet Synthesis plan.
 // This is the sequence of synthesis effects; we will, if possible, come up with a plan for allocating candy to each of these.
 const synthesisPlanner = new SynthesisPlanner(
-  $effects`Synthesis: Learning, Synthesis: Smart, Synthesis: Strong, Synthesis: Cool, Synthesis: Hot, Synthesis: Collection`
+  //$effects`Synthesis: Learning, Synthesis: Smart, Synthesis: Strong, Synthesis: Cool, Synthesis: Hot, Synthesis: Collection`
+  $effects`Synthesis: Learning, Synthesis: Smart, Synthesis: Cool, Synthesis: Hot, Synthesis: Collection`
 );
 
 /*
@@ -441,6 +443,12 @@ function testCoilWire() {
     visitUrl("main.php?action=may4");
     runChoice(4);
 
+    //TODO:  Check if something else might had been better
+    //20% item drop, +20% stats weapon
+    if (!have($item`oversized sparkler`)) {
+      buy(1, $item`oversized sparkler`);
+    }
+
     // NOTE: No turn 0 sausage fight!
 
     // should probably fight, digitize, wink a bishop or something here
@@ -544,6 +552,9 @@ function testHP() {
     //   create(1, $item`bitchin\' meatcar`);
     // }
 
+    // scrapbook for +exp
+    equip($item`familiar scrapbook`);
+
     // Depends on Ez's Bastille script.
     cliExecute("bastille myst brutalist");
 
@@ -590,16 +601,6 @@ function testHP() {
     //   use(1, $item`BRICKO oyster`);
     //   autosell(1, $item`BRICKO pearl`);
     //   setAutoAttack(0);
-    // }
-
-    // Prep Sweet Synthesis.
-    //TODO: find other candy?
-    // if (myGardenType() === "peppermint") {
-    //   cliExecute("garden pick");
-    // } else {
-    //   print(
-    //     "WARNING: This script is built for peppermint garden. Switch gardens or find other candy."
-    //   );
     // }
 
     //TODO visit garden
@@ -967,16 +968,27 @@ function testHP() {
     //         .trySkill(Skill.get("Lecture on Relativity"))
     //         .step(justKillTheThing)
     //     );
+    //     setAutoAttack(0);
     //   }
     // } else {
     //   print("YOU FUCKED UP THE KRAMCO CHAIN AGAIN, YOU DUMBASS! Go kill crayon elves instead.");
     // }
 
+    // Checking if it's gerald(ine) and accepting the quest if it is, otherwise just here to party.
+
     //useDefaultFamiliar();
+    if (get("_questPartyFairQuest") == "" && $location`The Neverending Party`.turnsSpent==0) {
+      setChoice(1322, 6); // Leave
+      adv1($location`The Neverending Party`, -1, "");
+    }
+    if (get("_questPartyFairQuest") === "food" || get("_questPartyFairQuest") === "booze") {
+      setChoice(1322, 1); // accept quest
+    } else {
+      setChoice(1322, 2); // just here to party
+    }
+    setChoice(1325, 2); // +20% mys exp buff
     equip($item`Kramco Sausage-o-Matic&trade;`);
     equip($slot`acc3`, $item`backup camera`);
-    setChoice(1322, 2); // reject quest
-    setChoice(1325, 2); // +20% mys exp buff
     //equip($slot`shirt`, $item`none`);
     while (get("_backUpUses") < 11) {
       if (!haveEffect($effect`Tomes of Opportunity`)) {
@@ -1124,21 +1136,18 @@ function testHP() {
     // ensure_effect($effect[Tomato Power]);
     ensureEffect($effect`Song of Starch`);
     ensureEffect($effect`Big`);
-    ensureEffect($effect`Song of Bravado`);
     ensureSong($effect`Stevedave\'s Shanty of Superiority`);
-    //TODO: uncomment when you know it
-    //ensureSong($effect`Power Ballad of the Arrowsmith`);
-    //TODO: uncomment when you know it
-    //ensureEffect($effect`Rage of the Reindeer`);
+    ensureSong($effect`Power Ballad of the Arrowsmith`);
+    ensureEffect($effect`Rage of the Reindeer`);
     ensureEffect($effect`Quiet Determination`);
     //TODO: uncomment when you know it
     //ensureEffect($effect`Disdain of the War Snapper`);
     ensureNpcEffect($effect`Go Get \'Em, Tiger!`, 5, $item`Ben-Gal&trade; balm`);
 
-    synthesisPlanner.synthesize($effect`Synthesis: Strong`);
+    //synthesisPlanner.synthesize($effect`Synthesis: Strong`);
 
     //useFamiliar($familiar`disembodied hand`);
-
+    useFamiliar($familiar`Left-Hand Man`);
     maximize("hp", false);
 
     // QUEST - Donate Blood (HP)
@@ -1165,6 +1174,7 @@ function testHP() {
     doTest(TEST_HP);
     HP_TURNS = myTurncount() - TEMP_TURNS;
     setProperty("_hccsHpTurns", HP_TURNS.toString());
+    useFamiliar(familiarFor100Run);
   }
 }
 
@@ -1173,33 +1183,30 @@ function testMus() {
     if (myClass() === $class`Pastamancer`) useSkill(1, $skill`Bind Undead Elbow Macaroni`);
     else ensurePotionEffect($effect`Expert Oiliness`, $item`oil of expertise`);
 
-    if (myInebriety() <= 6) {
-      ensureOde(6);
-      tryUse(1, $item`astral six-pack`);
-      drink(6, $item`astral pilsner`);
+    tryUse(1, $item`astral six-pack`);
+    while (have($item`astral pilsner`) && myInebriety() < inebrietyLimit()) {
+      ensureOde(1);
+      drink(1, $item`astral pilsner`);
     }
 
     ensureEffect($effect`Big`);
     ensureEffect($effect`Song of Bravado`);
     ensureSong($effect`Stevedave\'s Shanty of Superiority`);
-    //TODO: uncomment when you know it
-    //ensureSong($effect`Power Ballad of the Arrowsmith`);
-    //TODO: uncomment when you know it
-    //ensureEffect($effect`Rage of the Reindeer`);
+    ensureSong($effect`Power Ballad of the Arrowsmith`);
+    ensureEffect($effect`Rage of the Reindeer`);
     ensureEffect($effect`Quiet Determination`);
     //TODO: uncomment when you know it
     //ensureEffect($effect`Disdain of the War Snapper`);
     // ensure_effect($effect[Tomato Power]);
     ensureNpcEffect($effect`Go Get \'Em, Tiger!`, 5, $item`Ben-Gal&trade; balm`);
     // ensure_effect($effect[Ham-Fisted]);
-    create(1, $item`philter of phorce`);
+    //create(1, $item`philter of phorce`);
     ensureEffect($effect`Phorcefullness`);
 
     // Beach Comb
     ensureEffect($effect`Lack of Body-Building`);
 
-    //TODO: uncomment if i get left-hand man
-    //useFamiliar($familiar`Left-Hand Man`);
+    useFamiliar($familiar`Left-Hand Man`);
     maximize("muscle", false);
 
     // for (const increaser of [
@@ -1251,8 +1258,7 @@ function testMys() {
     ensureEffect($effect`Mystically Oiled`);
     ensureNpcEffect($effect`Glittering Eyelashes`, 5, $item`glittery mascara`);
 
-    //todo: uncomment if i get left-hand man
-    //useFamiliar($familiar`Left-Hand Man`);
+    useFamiliar($familiar`Left-Hand Man`);
     maximize("mysticality", false);
 
   
@@ -1301,13 +1307,11 @@ function testMox() {
     ensureEffect($effect`Big`);
     ensureEffect($effect`Song of Bravado`);
     ensureSong($effect`Stevedave\'s Shanty of Superiority`);
-    //TODO: uncomment when i learn skill
-    //ensureSong($effect`The Moxious Madrigal`);
+    ensureSong($effect`The Moxious Madrigal`);
     ensureEffect($effect`Quiet Desperation`);
     // ensure_effect($effect[Tomato Power]);
     ensureEffect($effect`Disco Fever`);
-    //TODO: uncomment when i learn skill
-    //ensureEffect($effect`Blubbered Up`);
+    ensureEffect($effect`Blubbered Up`);
     //TODO: uncomment when i learn skill
     //ensureEffect($effect`Mariachi Mood`);
     ensureNpcEffect($effect`Butt-Rock Hair`, 5, $item`hair spray`);
@@ -1318,8 +1322,7 @@ function testMox() {
 
     synthesisPlanner.synthesize($effect`Synthesis: Cool`);
 
-    //uncomment if i get left-hand man
-    //useFamiliar($familiar`Left-Hand Man`);
+    useFamiliar($familiar`Left-Hand Man`);
     maximize("moxie", false);
 
     function moxTurns() {
@@ -1630,18 +1633,22 @@ function testFamiliarWeight() {
       cliExecute("create 1 burning paper crane");
     }
 
-    //if (!getPropertyBoolean("_clanFortuneBuffUsed")) cliExecute("fortune buff familiar");
+    if (have($item`"DRINK ME" potion`) && !have($effect`You Can Really Taste the Dormous`)) {
+      buy(1, $item`sombrero-mounted sparkler`);
+      cliExecute("hatter 24");
+    }
+      //if (!getPropertyBoolean("_clanFortuneBuffUsed")) cliExecute("fortune buff familiar");
 
-    // checking here to see if we had a tome summon for a cracker or if we should use BBB
-    // if (availableAmount($item`cracker`) > 0) {
-    //   useFamiliar($familiar`exotic parrot`);
-    // } else if (availableAmount($item`bugged beanie`) === 1) {
-    //   useFamiliar($familiar`baby bugged bugbear`);
-    // }
-    maximize("familiar weight", false);
+      // checking here to see if we had a tome summon for a cracker or if we should use BBB
+      // if (availableAmount($item`cracker`) > 0) {
+      //   useFamiliar($familiar`exotic parrot`);
+      // } else if (availableAmount($item`bugged beanie`) === 1) {
+      //   useFamiliar($familiar`baby bugged bugbear`);
+      // }
+      maximize("familiar weight", false);
 
     function familiarTurns() {
-      return 60 - floor(familiarWeight(myFamiliar()) + round(numericModifier("familiar weight")) / 5 + 0.001);
+      return 60 - floor((familiarWeight(myFamiliar()) + round(numericModifier("familiar weight"))) / 5 + 0.001);
     }
 
     if (familiarTurns() > targetTurns.get(TEST_FAMILIAR)) {
@@ -1753,12 +1760,10 @@ function testWeaponDamage() {
 
     ensureEffect($effect`Carol of the Bulls`);
     ensureEffect($effect`Song of the North`);
-    //TODO: uncomment when you learn this
-    // ensureEffect($effect`Rage of the Reindeer`);
+    ensureEffect($effect`Rage of the Reindeer`);
     //TODO: uncomment when you learn this
     //ensureEffect($effect`Frenzied, Bloody`);
-    //TODO: uncomment when you learn this
-    // ensureEffect($effect`Scowl of the Auk`);
+    ensureEffect($effect`Scowl of the Auk`);
     //TODO: uncomment when you learn this
     // ensureEffect($effect`Disdain of the War Snapper`);
     //TODO: uncomment when you learn this
@@ -1803,12 +1808,13 @@ function testWeaponDamage() {
     // ensureEffect($effect`Meteor Showered`);
     ensureEffect($effect`Bow-Legged Swagger`);
 
-    //useFamiliar($familiar`disembodied hand`);
-    maximize("weapon damage", false);
-
-    if (have($item`glass of raw eggs`) && myFullness() == 4) {
+    if (have($item`glass of raw eggs`) && !have($effect`Boxing Day Breakfast`)) {
       eat(1, $item`glass of raw eggs`);
     }
+
+    //useFamiliar($familiar`disembodied hand`);
+    useFamiliar($familiar`Left-Hand Man`);
+    maximize("weapon damage", false);
 
     function weaponTurns() {
       //code shamelessly copied from TourGuide
@@ -1830,6 +1836,15 @@ function testWeaponDamage() {
         modifier_2 *= 2;
       }
       return 60 - (floor(modifier_1 / 50 + 0.001) + floor(modifier_2 / 50 + 0.001));
+    }
+
+    if (weaponTurns() > 5) {
+      // Rictus of Yeg = 200% Weapon damage
+      //if weapon turns are less than 5, we want to use it on spell damage instead for -4 turns there
+      if (!getPropertyBoolean("_cargoPocketEmptied") && haveEffect($effect`Rictus of Yeg`) === 0) {
+        if (availableAmount($item`Yeg\'s Motel toothbrush`) === 0) cliExecute("cargo 284");
+        ensureEffect($effect`Rictus of Yeg`);
+      }
     }
 
     if (weaponTurns() > targetTurns.get(TEST_WEAPON)) {
@@ -1872,11 +1887,9 @@ function testSpellDamage() {
       ensureEffect($effect`Mental A-cue-ity`);
     }
 
-    // Beach Comb
-    //ensureEffect($effect`We\'re All Made of Starfish`);
     // Tea party
-    ensureSewerItem(1, $item`mariachi hat`);
-    ensureEffect($effect`Full Bottle in front of Me`);
+    // ensureSewerItem(1, $item`mariachi hat`);
+    // ensureEffect($effect`Full Bottle in front of Me`);
 
     useSkill(1, $skill`Spirit of Cayenne`);
     // Get flimsy hardwood scraps.
@@ -1922,6 +1935,8 @@ function testSpellDamage() {
       retrieveItem($item`Staff of the Headmaster's Victuals`);
     }
 
+    //spent free kills on toxic teacups for 12% spell dmg per kill?
+
     //TODO: probably try a different location since we cant guarantee our familiar won;t attack
     // Meteor showered
     if (haveEffect($effect`Meteor Showered`) === 0) {
@@ -1937,6 +1952,7 @@ function testSpellDamage() {
     setAutoAttack(0);
 
     //useFamiliar($familiar`disembodied hand`);
+    useFamiliar($familiar`Left-Hand Man`);
     maximize("spell damage", false);
 
     if (round(numericModifier("spell damage percent")) % 50 >= 40) {
@@ -2054,7 +2070,6 @@ function testItemDrop() {
     }
 
     ensureEffect($effect`Fat Leon\'s Phat Loot Lyric`);
-    //TODO: uncomment when i learn skill
     ensureEffect($effect`Singer\'s Faithful Ocelot`);
     //TODO: uncomment when i learn skill
     //ensureEffect($effect`The Spirit of Taking`);
@@ -2124,12 +2139,12 @@ export function main(argString = "") {
   targetTurns.set(TEST_MUS, 1);
   targetTurns.set(TEST_MYS, 1);
   targetTurns.set(TEST_MOX, 1);
-  targetTurns.set(TEST_HOT_RES, 1);
+  targetTurns.set(TEST_HOT_RES, 2);
   targetTurns.set(TEST_NONCOMBAT, 1);
-  targetTurns.set(TEST_FAMILIAR, 31);
-  targetTurns.set(TEST_WEAPON, 12);
-  targetTurns.set(TEST_SPELL, 26);
-  targetTurns.set(TEST_ITEM, 1);
+  targetTurns.set(TEST_FAMILIAR, 30);
+  targetTurns.set(TEST_WEAPON, 5);
+  targetTurns.set(TEST_SPELL, 30);
+  targetTurns.set(TEST_ITEM, 2);
   try {
     familiarFor100Run = toFamiliar(getProperty("_hccsFamiliar"));
     if (familiarFor100Run == $familiar`none`) {
@@ -2179,8 +2194,6 @@ export function main(argString = "") {
 
     useFamiliar(familiarFor100Run);
 
-    //TODO: mummery?
-
     testCoilWire();
     testHP();
     testMus();
@@ -2210,7 +2223,7 @@ export function main(argString = "") {
       runChoice(4);
     }
 
-    cliExecute("pvp fame select");
+    cliExecute("pvp fame Loot Hunter");
   } finally {
     setProperty("autoSatisfyWithNPCs", "true");
     setProperty("autoSatisfyWithCoinmasters", getProperty("_saved_autoSatisfyWithCoinmasters"));
@@ -2220,9 +2233,11 @@ export function main(argString = "") {
 
     print(
       "This loop took " +
-        (gametimeToInt() - START_TIME) / 1000 +
+        floor((gametimeToInt() - START_TIME) / 1000 / 60) +
+        " minutes and " +
+        ceil(((gametimeToInt() - START_TIME) / 1000) % 60) +
         " seconds, for a 1 day, " +
-        (myTurncount()) +
+        myTurncount() +
         " turn HCCS run. Organ use was " +
         myFullness() +
         "/" +
@@ -2257,5 +2272,11 @@ export function main(argString = "") {
     print("Weapon Damage test: " + getProperty("_hccsWeaponTurnsUncapped"), "green");
     print("Spell Damage Test: " + getProperty("_hccsSpellTurnsUncapped"), "green");
     print("Item Drop test: " + getProperty("_hccsItemTurnsUncapped"), "green");
+
+    if (get("_questPartyFairQuest") === "food") {
+      print("Hey, go talk to Geraldine!", "blue");
+    } else if (get("_questPartyFairQuest") === "booze") {
+      print("Hey, go talk to Gerald!", "blue");
+    }
   }
 }
