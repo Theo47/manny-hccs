@@ -23,11 +23,10 @@ __webpack_require__.r(__webpack_exports__);
 //   throw "You have the wrong garden";
 // }
 (0,kolmafia__WEBPACK_IMPORTED_MODULE_0__.print)("you're about to ascend! wait, is that good?", "green"); // add in checks for chateau and boots, chateau mob has a pref, dunno about the rest
-// const pg = visitUrl("charpane.php");
-// if (!containsText(visitUrl("charpane.php"), "Astral Spirit"))
-//   visitUrl("ascend.php?action=ascend&confirm=on&confirm2=on");
-// if (!containsText(visitUrl("charpane.php"), "Astral Spirit")) throw "Failed to ascend.";
 
+var pg = (0,kolmafia__WEBPACK_IMPORTED_MODULE_0__.visitUrl)("charpane.php");
+if (!(0,kolmafia__WEBPACK_IMPORTED_MODULE_0__.containsText)((0,kolmafia__WEBPACK_IMPORTED_MODULE_0__.visitUrl)("charpane.php"), "Astral Spirit")) (0,kolmafia__WEBPACK_IMPORTED_MODULE_0__.visitUrl)("ascend.php?action=ascend&confirm=on&confirm2=on");
+if (!(0,kolmafia__WEBPACK_IMPORTED_MODULE_0__.containsText)((0,kolmafia__WEBPACK_IMPORTED_MODULE_0__.visitUrl)("charpane.php"), "Astral Spirit")) throw "Failed to ascend.";
 (0,kolmafia__WEBPACK_IMPORTED_MODULE_0__.visitUrl)("afterlife.php?action=pearlygates");
 (0,kolmafia__WEBPACK_IMPORTED_MODULE_0__.visitUrl)("afterlife.php?action=buydeli&whichitem=5046"); //astral pilsners
 

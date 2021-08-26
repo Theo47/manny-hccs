@@ -11,11 +11,11 @@ print("you're about to ascend! wait, is that good?", "green");
 
 // add in checks for chateau and boots, chateau mob has a pref, dunno about the rest
 
-// const pg = visitUrl("charpane.php");
+const pg = visitUrl("charpane.php");
 
-// if (!containsText(visitUrl("charpane.php"), "Astral Spirit"))
-//   visitUrl("ascend.php?action=ascend&confirm=on&confirm2=on");
-// if (!containsText(visitUrl("charpane.php"), "Astral Spirit")) throw "Failed to ascend.";
+if (!containsText(visitUrl("charpane.php"), "Astral Spirit"))
+  visitUrl("ascend.php?action=ascend&confirm=on&confirm2=on");
+if (!containsText(visitUrl("charpane.php"), "Astral Spirit")) throw "Failed to ascend.";
 visitUrl("afterlife.php?action=pearlygates");
 visitUrl("afterlife.php?action=buydeli&whichitem=5046"); //astral pilsners
 visitUrl("afterlife.php?action=buyarmory&whichitem=5040"); //astral pet sweater

@@ -89,7 +89,10 @@ import {
   visitUrl,
   wait,
   familiarWeight,
-  ceil
+  ceil,
+  putCloset,
+  takeCloset,
+  closetAmount,
 } from "kolmafia";
 import {
   $class,
@@ -109,11 +112,13 @@ import {
   get,
   Macro,
   $slots,
-  have
+  have,
 } from "libram";
 import { error } from "libram/dist/console";
 import { familiar } from "libram/dist/resources/ObtuseAngel";
 import { SynthesisPlanner } from "./synthesis";
+
+var is100Run = false;
 
 // rewrite all combats
 // create a defaultFamiliar function that chooses somewhat dynamically
@@ -156,6 +161,8 @@ var familiarFor100Run: Familiar;
 
 const START_TIME = gametimeToInt();
 
+var END_TIME = gametimeToInt();
+
 const justKillTheThing = Macro.trySkill($skill`Curse of Weaksauce`)
   .trySkill($skill`Micrometeorite`)
   .trySkill($skill`Sing Along`)
@@ -167,8 +174,7 @@ const justKillTheThing = Macro.trySkill($skill`Curse of Weaksauce`)
 // Sweet Synthesis plan.
 // This is the sequence of synthesis effects; we will, if possible, come up with a plan for allocating candy to each of these.
 const synthesisPlanner = new SynthesisPlanner(
-  //$effects`Synthesis: Learning, Synthesis: Smart, Synthesis: Strong, Synthesis: Cool, Synthesis: Hot, Synthesis: Collection`
-  $effects`Synthesis: Learning, Synthesis: Smart, Synthesis: Cool, Synthesis: Hot, Synthesis: Collection`
+  $effects`Synthesis: Learning, Synthesis: Smart, Synthesis: Strong, Synthesis: Cool, Synthesis: Hot, Synthesis: Collection`
 );
 
 /*
@@ -184,24 +190,26 @@ function useDefaultFamiliar() {
 */
 
 function useDefaultFamiliar() {
-  useFamiliar(familiarFor100Run);
-  // if (get("camelSpit") < 100 && !testDone(TEST_WEAPON)) {
-  //   useFamiliar($familiar`melodramedary`);
-  //   equip($item`dromedary drinking helmet`);
-  // } else if (
-  //   availableAmount($item`rope`) < 1 &&
-  //   availableAmount($item`burning newspaper`) + availableAmount($item`burning paper crane`) < 1
-  // ) {
-  //   useFamiliar($familiar`Garbage Fire`);
-  // } else if (
-  //   availableAmount($item`short stack of pancakes`) === 0 &&
-  //   haveEffect($effect`shortly stacked`) === 0 &&
-  //   !testDone(TEST_FAMILIAR)
-  // ) {
-  //   useFamiliar($familiar`shorter-order cook`);
-  // } else {
-  //   useFamiliar($familiar`machine elf`);
-  // }
+  if (is100Run) {
+    useFamiliar(familiarFor100Run);
+  }
+  else if (get("camelSpit") < 100 && !testDone(TEST_WEAPON) && have($familiar`melodramedary`)) {
+    useFamiliar($familiar`melodramedary`);
+    if (have($item`dromedary drinking helmet`)) equip($item`dromedary drinking helmet`);
+  } else if (
+    have($familiar`Garbage Fire`) && availableAmount($item`rope`) < 1 &&
+    availableAmount($item`burning newspaper`) + availableAmount($item`burning paper crane`) < 1
+  ) {
+    useFamiliar($familiar`Garbage Fire`);
+  } else if ( have($familiar`shorter-order cook`) &&
+    availableAmount($item`short stack of pancakes`) === 0 &&
+    haveEffect($effect`shortly stacked`) === 0 &&
+    !testDone(TEST_FAMILIAR)
+  ) {
+    useFamiliar($familiar`shorter-order cook`);
+  } else {
+    useFamiliar($familiar`Hovering Sombrero`);
+  }
 }
 
 function tryUse(quantity: number, it: Item) {
@@ -348,7 +356,7 @@ function fightSausageIfGuaranteed() {
     //equip($slot`acc2`, $item`Powerful Glove`);
     //equip($slot`acc3`, $item`Lil\' Doctor&trade; Bag`);
 
-    //useDefaultFamiliar();
+    useDefaultFamiliar();
 
     adventureMacroAuto($location`The Neverending Party`, kill());
   }
@@ -446,6 +454,7 @@ function testCoilWire() {
     //TODO:  Check if something else might had been better
     //20% item drop, +20% stats weapon
     if (!have($item`oversized sparkler`)) {
+      visitUrl("clan_viplounge.php?action=fwshop&whichfloor=2"); //a bug prevents buying if you haven't visited shop first
       buy(1, $item`oversized sparkler`);
     }
 
@@ -621,6 +630,7 @@ function testHP() {
     equip($slot`acc2`, $item`kremlin's greatest briefcase`);
     setChoice(1204, 1);
     while (getPropertyInt("_gingerbreadCityTurns") < 5) {
+      useDefaultFamiliar();
       adventureMacro(
         $location`Gingerbread Train Station`,
         Macro.trySkill($skill`KGB tranquilizer dart`)
@@ -633,10 +643,10 @@ function testHP() {
     synthesisPlanner.synthesize($effect`Synthesis: Learning`);
     synthesisPlanner.synthesize($effect`Synthesis: Smart`);
 
-    if (round(numericModifier("mysticality experience percent")) < 80) {
-      error("Insufficient +stat%.");
-      abort();
-    }
+    // if (round(numericModifier("mysticality experience percent")) < 80) {
+    //   error("Insufficient +stat%.");
+    //   abort();
+    // }
 
     // Use ten-percent bonus
     tryUse(1, $item`a ten-percent bonus`);
@@ -669,9 +679,17 @@ function testHP() {
       wishEffect($effect`New and Improved`);
     }
 
+    //candle correspondence
+    if (have($item`votive of confidence`)) {
+      ensureEffect($effect`Confidence of the Votive`);
+    }
+
     // if (myInebriety() == 0 && getPropertyInt("_g9Effect") <250) {
+    //   //closet Swizzler if we have any since it will be consumed if in inventory while drinking and we want to save it for sweet synthesis
+    //   putCloset($item`Swizzler`, itemAmount($item`Swizzler`));
     //   ensureOde(2);
     //   cliExecute("drink 1 Bee's Knees");
+    //   takeCloset($item`Swizzler`, closetAmount($item`Swizzler`));
     // }
 
     //TODO: get other stat buffs?
@@ -702,7 +720,7 @@ function testHP() {
     // Don't use Kramco here.
     equip($slot`off-hand`, $item`familiar scrapbook`);
 
-    //TODO: uncomment if i give up on 100% runs and i have ghost
+    //TODO: uncomment if i get ghost
     // if (haveEffect($effect`holiday yoked`) === 0 && getPropertyInt("_kgbTranquilizerDartUses") < 3) {
     //   equip($slot`acc1`, $item`kremlin\'s greatest briefcase`);
     //   useFamiliar($familiar`ghost of crimbo carols`);
@@ -866,7 +884,7 @@ function testHP() {
     // LOV tunnel for elixirs, epaulettes, and heart surgery
     // TODO: still need to make this combat better
     if (!getPropertyBoolean("_loveTunnelUsed")) {
-      //useDefaultFamiliar();
+      useDefaultFamiliar();
       ensureEffect($effect`carol of the bulls`);
       ensureEffect($effect`carol of the hells`);
       setChoice(1222, 1); // Entrance
@@ -904,12 +922,12 @@ function testHP() {
     //   } */
     // }
 
-    //useDefaultFamiliar();
+    useDefaultFamiliar();
 
     //witchess fights
     if (get("_witchessFights") < 5) {
       equip($item`fourth of may cosplay saber`);
-      //useDefaultFamiliar();
+      useDefaultFamiliar();
       while (toInt(getProperty("_witchessFights")) < 2) {
         Macro.step(justKillTheThing).setAutoAttack();
         visitUrl("campground.php?action=witchess");
@@ -919,7 +937,7 @@ function testHP() {
         setAutoAttack(0);
       }
       while (toInt(getProperty("_witchessFights")) === 2) {
-        //useDefaultFamiliar();
+        useDefaultFamiliar();
         Macro.attack().repeat().setAutoAttack();
         ensureEffect($effect`carol of the bulls`);
         visitUrl("campground.php?action=witchess");
@@ -929,7 +947,7 @@ function testHP() {
         setAutoAttack(0);
       }
       while (toInt(getProperty("_witchessFights")) === 3) {
-        //useDefaultFamiliar();
+        useDefaultFamiliar();
         Macro.attack().repeat().setAutoAttack();
         ensureEffect($effect`carol of the bulls`);
         useSkill($skill`Cannelloni Cocoon`);
@@ -946,47 +964,47 @@ function testHP() {
       cliExecute("witchess");
     }
 
-    //TODO: uncomment when done with 100% runs
-    // Professor 9x free sausage fight @ NEP
-    // if (getPropertyInt("_sausageFights") === 0) {
-    //   useFamiliar($familiar`Pocket Professor`);
-    //   tryEquip($item`Pocket Professor memory chip`);
-    //   equip($item`Kramco Sausage-o-Matic&trade;`);
-    //   equip($slot`acc2`, $item`Brutal brogues`);
-    //   equip($slot`acc3`, $item`Beach Comb`);
-
-    //   while (getPropertyInt("_sausageFights") === 0) {
-    //     if (myHp() < 0.8 * myMaxhp()) {
-    //       visitUrl("clan_viplounge.php?where=hottub");
-    //     }
-
-    //     // Just here to party.
-    //     setChoice(1322, 2);
-    //     adventureMacroAuto(
-    //       $location`The Neverending Party`,
-    //       Macro.if_('!monstername "sausage goblin"', new Macro().step("abort"))
-    //         .trySkill(Skill.get("Lecture on Relativity"))
-    //         .step(justKillTheThing)
-    //     );
-    //     setAutoAttack(0);
-    //   }
-    // } else {
-    //   print("YOU FUCKED UP THE KRAMCO CHAIN AGAIN, YOU DUMBASS! Go kill crayon elves instead.");
-    // }
-
     // Checking if it's gerald(ine) and accepting the quest if it is, otherwise just here to party.
-
-    //useDefaultFamiliar();
-    if (get("_questPartyFairQuest") == "" && $location`The Neverending Party`.turnsSpent==0) {
-      setChoice(1322, 6); // Leave
-      adv1($location`The Neverending Party`, -1, "");
-    }
-    if (get("_questPartyFairQuest") === "food" || get("_questPartyFairQuest") === "booze") {
-      setChoice(1322, 1); // accept quest
-    } else {
-      setChoice(1322, 2); // just here to party
-    }
+    // if (get("_questPartyFairQuest") == "" && $location`The Neverending Party`.turnsSpent == 0) {
+    //   setChoice(1322, 6); // Leave
+    //   adv1($location`The Neverending Party`, -1, "");
+    // }
+    // if (get("_questPartyFairQuest") === "food" || get("_questPartyFairQuest") === "booze") {
+    //   setChoice(1322, 1); // accept quest
+    // } else {
+    setChoice(1322, 2); // just here to party
+    // }
     setChoice(1325, 2); // +20% mys exp buff
+
+    // Professor 9x free sausage fight @ NEP
+    if (getPropertyInt("_sausageFights") === 0) {
+      useFamiliar($familiar`Pocket Professor`);
+      tryEquip($item`Pocket Professor memory chip`);
+      equip($item`Kramco Sausage-o-Matic&trade;`);
+      equip($slot`acc2`, $item`Brutal brogues`);
+      equip($slot`acc3`, $item`Beach Comb`);
+
+      while (getPropertyInt("_sausageFights") === 0) {
+        if (myHp() < 0.8 * myMaxhp()) {
+          visitUrl("clan_viplounge.php?where=hottub");
+        }
+
+        // Just here to party.
+        setChoice(1322, 2);
+        adventureMacroAuto(
+          $location`The Neverending Party`,
+          Macro.if_('!monstername "sausage goblin"', new Macro().step("abort"))
+            .trySkill(Skill.get("Lecture on Relativity"))
+            .step(justKillTheThing)
+        );
+        setAutoAttack(0);
+      }
+    } else {
+      print("YOU FUCKED UP THE KRAMCO CHAIN AGAIN, YOU DUMBASS! Go kill crayon elves instead.");
+    }
+
+    useDefaultFamiliar();
+
     equip($item`Kramco Sausage-o-Matic&trade;`);
     equip($slot`acc3`, $item`backup camera`);
     //equip($slot`shirt`, $item`none`);
@@ -999,7 +1017,7 @@ function testHP() {
       if (getPropertyInt("_sausageFights") >= 3) {
         equip($item`familiar scrapbook`);
       }
-      //useDefaultFamiliar();
+      useDefaultFamiliar();
       adventureMacroAuto(
         $location`The Neverending Party`,
         Macro.if_("!monstername Sausage Goblin", Macro.skill("Back-Up to Your Last Enemy")).step(
@@ -1060,7 +1078,7 @@ function testHP() {
 
     // fight a witchess queen for pointy crown, getting a couple weapon damage effects just in case
     if (toInt(getProperty("_witchessFights")) === 4) {
-      //useDefaultFamiliar();
+      useDefaultFamiliar();
       useSkill(1, $skill`Cannelloni Cocoon`);
       Macro.attack().repeat().setAutoAttack();
       ensureEffect($effect`carol of the bulls`);
@@ -1072,14 +1090,14 @@ function testHP() {
       setAutoAttack(0);
     }
 
-    //useDefaultFamiliar();
+    useDefaultFamiliar();
 
-    //equip($slot`acc3`, $item`Lil\' Doctor&trade; Bag`);
+    equip($slot`acc2`, $item`Lil\' Doctor&trade; Bag`);
 
     // 14 free NEP fights, using mob hit and xray
     while (
       getPropertyInt("_neverendingPartyFreeTurns") < 10 ||
-      //|| (haveSkill($skill`Chest X-Ray`) && getPropertyInt("_chestXRayUsed") < 3)
+      (haveSkill($skill`Chest X-Ray`) && getPropertyInt("_chestXRayUsed") < 3) ||
       (haveSkill($skill`Gingerbread Mob Hit`) && !getPropertyBoolean("_gingerbreadMobHitUsed"))
     ) {
       ensureNpcEffect($effect`Glittering Eyelashes`, 5, $item`glittery mascara`);
@@ -1103,16 +1121,16 @@ function testHP() {
         getPropertyInt("_neverendingPartyFreeTurns") < 10 &&
         getPropertyInt("_feelPrideUsed") < 3
       ) {
-        //useDefaultFamiliar();
+        useDefaultFamiliar();
         adventureMacroAuto(
           $location`The Neverending Party`,
           Macro.trySkill($skill`feel pride`).step(justKillTheThing)
         );
       } else if (getPropertyInt("_neverendingPartyFreeTurns") < 10) {
-        //useDefaultFamiliar();
+        useDefaultFamiliar();
         adventureMacroAuto($location`The Neverending Party`, Macro.step(justKillTheThing));
       } else {
-        //useDefaultFamiliar();
+        useDefaultFamiliar();
         adventureMacroAuto(
           $location`The Neverending Party`,
           Macro.trySkill($skill`chest x-ray`).trySkill($skill`gingerbread mob hit`)
@@ -1123,7 +1141,7 @@ function testHP() {
     equip($item`Fourth of May Cosplay Saber`);
     cliExecute("fold makeshift garbage shirt");
     equip($item`makeshift garbage shirt`);
-    //useDefaultFamiliar();
+    useDefaultFamiliar();
 
     if (getProperty("boomBoxSong") !== "These Fists Were Made for Punchin'") {
       cliExecute("boombox damage");
@@ -1144,7 +1162,7 @@ function testHP() {
     //ensureEffect($effect`Disdain of the War Snapper`);
     ensureNpcEffect($effect`Go Get \'Em, Tiger!`, 5, $item`Ben-Gal&trade; balm`);
 
-    //synthesisPlanner.synthesize($effect`Synthesis: Strong`);
+    synthesisPlanner.synthesize($effect`Synthesis: Strong`);
 
     //useFamiliar($familiar`disembodied hand`);
     useFamiliar($familiar`Left-Hand Man`);
@@ -1174,7 +1192,9 @@ function testHP() {
     doTest(TEST_HP);
     HP_TURNS = myTurncount() - TEMP_TURNS;
     setProperty("_hccsHpTurns", HP_TURNS.toString());
-    useFamiliar(familiarFor100Run);
+    if (is100Run) {
+      useFamiliar(familiarFor100Run);
+    }
   }
 }
 
@@ -1184,10 +1204,15 @@ function testMus() {
     else ensurePotionEffect($effect`Expert Oiliness`, $item`oil of expertise`);
 
     tryUse(1, $item`astral six-pack`);
+    //closet Swizzler if we have any since it will be consumed if in inventory while drinking and we want to save it for sweet synthesis
+    if (have($item`Swizzler`) && have($item`astral pilsner`)) {
+      putCloset($item`Swizzler`, itemAmount($item`Swizzler`));
+    }
     while (have($item`astral pilsner`) && myInebriety() < inebrietyLimit()) {
       ensureOde(1);
       drink(1, $item`astral pilsner`);
     }
+    takeCloset($item`Swizzler`, closetAmount($item`Swizzler`));
 
     ensureEffect($effect`Big`);
     ensureEffect($effect`Song of Bravado`);
@@ -1242,7 +1267,9 @@ function testMus() {
     doTest(TEST_MUS);
     MUS_TURNS = myTurncount() - TEMP_TURNS;
     setProperty("_hccsMusTurns", MUS_TURNS.toString());
-    useFamiliar(familiarFor100Run);
+    if (is100Run) {
+      useFamiliar(familiarFor100Run);
+    }
   }
 }
 
@@ -1261,7 +1288,6 @@ function testMys() {
     useFamiliar($familiar`Left-Hand Man`);
     maximize("mysticality", false);
 
-  
     if (myBuffedstat($stat`mysticality`) - myBasestat($stat`mysticality`) < 1770) {
       error("Not enough mysticality to cap.");
       abort();
@@ -1285,7 +1311,9 @@ function testMys() {
     doTest(TEST_MYS);
     MYS_TURNS = myTurncount() - TEMP_TURNS;
     setProperty("_hccsMysTurns", MYS_TURNS.toString());
-    useFamiliar(familiarFor100Run);
+    if (is100Run) {
+      useFamiliar(familiarFor100Run);
+    }
   }
 }
 
@@ -1347,14 +1375,16 @@ function testMox() {
     doTest(TEST_MOX);
     MOX_TURNS = myTurncount() - TEMP_TURNS;
     setProperty("_hccsMoxTurns", MOX_TURNS.toString());
-    useFamiliar(familiarFor100Run);
+    if (is100Run) {
+      useFamiliar(familiarFor100Run);
+    }
   }
 }
 
 function testHotRes() {
   if (!testDone(TEST_HOT_RES)) {
     ensureMpSausage(500);
-    //useDefaultFamiliar();
+    useDefaultFamiliar();
     fightSausageIfGuaranteed();
 
     // Make sure no moon spoon.
@@ -1377,6 +1407,7 @@ function testHotRes() {
       //equip($item`vampyric cloake`);
       setProperty("choiceAdventure1387", "3");
       mapMonster($location`LavaCo&trade; Lamp Factory`, $monster`Factory worker (female)`);
+      setAutoAttack(0);
       withMacro(
         Macro.trySkill($skill`become a cloud of mist`)
           .skill($skill`meteor shower`)
@@ -1480,6 +1511,11 @@ function testHotRes() {
     // Use pocket maze
     if (availableAmount($item`pocket maze`) > 0) ensureEffect($effect`Amazing`);
 
+    //candle correspondence
+    if (have($item`rainbow glitter candle`)) {
+      ensureEffect($effect`Covered in the Rainbow`);
+    }
+
     // Mafia sometimes can't figure out that multiple +weight things would get us to next tier.
     maximize("hot res, 0.01 familiar weight", false);
 
@@ -1504,7 +1540,9 @@ function testHotRes() {
     TEMP_TURNS = myTurncount();
     doTest(TEST_HOT_RES);
     HOT_RES_TURNS = myTurncount() - TEMP_TURNS;
-    useFamiliar(familiarFor100Run);
+    if (is100Run) {
+      useFamiliar(familiarFor100Run);
+    }
     setProperty("_hccsHotResTurns", HOT_RES_TURNS.toString());
   }
 }
@@ -1584,7 +1622,9 @@ function testNonCombat() {
     TEMP_TURNS = myTurncount();
     doTest(TEST_NONCOMBAT);
     NONCOMBAT_TURNS = myTurncount() - TEMP_TURNS;
-    useFamiliar(familiarFor100Run);
+    if (is100Run) {
+      useFamiliar(familiarFor100Run);
+    }
     setProperty("_hccsNonCombatTurns", NONCOMBAT_TURNS.toString());
   }
 }
@@ -1607,7 +1647,7 @@ function testFamiliarWeight() {
     ensureEffect($effect`Empathy`);
     ensureEffect($effect`robot friends`);
     //ensureEffect($effect`human-machine hybrid`);
-    //ensureEffect($effect`shortly stacked`);
+    if (have($item`short stack of pancakes`)) ensureEffect($effect`shortly stacked`);
     /*
     if (availableAmount($item`cracker`) > 0 && getPropertyInt("tomeSummons") < 3) {
       useFamiliar($familiar`Exotic Parrot`);
@@ -1633,22 +1673,27 @@ function testFamiliarWeight() {
       cliExecute("create 1 burning paper crane");
     }
 
-    if (have($item`"DRINK ME" potion`) && !have($effect`You Can Really Taste the Dormous`)) {
+    if (!have($item`sombrero-mounted sparkler`)) {
       buy(1, $item`sombrero-mounted sparkler`);
-      cliExecute("hatter 24");
     }
-      //if (!getPropertyBoolean("_clanFortuneBuffUsed")) cliExecute("fortune buff familiar");
+    ensureEffect($effect`You Can Really Taste the Dormous`);
+    //if (!getPropertyBoolean("_clanFortuneBuffUsed")) cliExecute("fortune buff familiar");
 
-      // checking here to see if we had a tome summon for a cracker or if we should use BBB
-      // if (availableAmount($item`cracker`) > 0) {
-      //   useFamiliar($familiar`exotic parrot`);
-      // } else if (availableAmount($item`bugged beanie`) === 1) {
-      //   useFamiliar($familiar`baby bugged bugbear`);
-      // }
-      maximize("familiar weight", false);
+    // checking here to see if we had a tome summon for a cracker or if we should use BBB
+    // if (availableAmount($item`cracker`) > 0) {
+    //   useFamiliar($familiar`exotic parrot`);
+    // } else if (availableAmount($item`bugged beanie`) === 1) {
+    //   useFamiliar($familiar`baby bugged bugbear`);
+    // }
+    maximize("familiar weight", false);
 
     function familiarTurns() {
-      return 60 - floor((familiarWeight(myFamiliar()) + round(numericModifier("familiar weight"))) / 5 + 0.001);
+      return (
+        60 -
+        floor(
+          (familiarWeight(myFamiliar()) + round(numericModifier("familiar weight"))) / 5 + 0.001
+        )
+      );
     }
 
     if (familiarTurns() > targetTurns.get(TEST_FAMILIAR)) {
@@ -1675,9 +1720,12 @@ function testWeaponDamage() {
   if (!testDone(TEST_WEAPON)) {
     fightSausageIfGuaranteed();
 
-    if (myInebriety() < inebrietyLimit()-2 && !have($effect`In a Lather`)) {
+    if (myInebriety() < inebrietyLimit() - 2 && !have($effect`In a Lather`)) {
+      //closet Swizzler if we have any since it will be consumed if in inventory while drinking and we want to save it for sweet synthesis
+      putCloset($item`Swizzler`, itemAmount($item`Swizzler`));
       ensureOde(2);
       cliExecute("drink 1 Sockdollager");
+      takeCloset($item`Swizzler`, closetAmount($item`Swizzler`));
     }
 
     // Get inner elf for weapon damage
@@ -1761,8 +1809,7 @@ function testWeaponDamage() {
     ensureEffect($effect`Carol of the Bulls`);
     ensureEffect($effect`Song of the North`);
     ensureEffect($effect`Rage of the Reindeer`);
-    //TODO: uncomment when you learn this
-    //ensureEffect($effect`Frenzied, Bloody`);
+    ensureEffect($effect`Frenzied, Bloody`);
     ensureEffect($effect`Scowl of the Auk`);
     //TODO: uncomment when you learn this
     // ensureEffect($effect`Disdain of the War Snapper`);
@@ -1871,12 +1918,11 @@ function testSpellDamage() {
   if (!testDone(TEST_SPELL)) {
     fightSausageIfGuaranteed();
 
-    //simmering costs a turn. remove if i manage to cap spell damage
-    ensureEffect($effect`Simmering`);
+    //simmering costs 1 adv. remove if i manage to cap spell damage
+    ensureEffect($effect`Simmering`); //+100% spell damage
     ensureEffect($effect`Song of Sauce`);
     ensureEffect($effect`Carol of the Hells`);
-    //TODO: uncomment when i learn skill
-    //ensureEffect($effect`Arched Eyebrow of the Archmage`);
+    ensureEffect($effect`Arched Eyebrow of the Archmage`);
     ensureSong($effect`Jackasses\' Symphony of Destruction`);
     if (availableAmount($item`lov elixir \#6`) > 0) {
       ensureEffect($effect`The Magic of LOV`);
@@ -1892,11 +1938,12 @@ function testSpellDamage() {
     // ensureEffect($effect`Full Bottle in front of Me`);
 
     useSkill(1, $skill`Spirit of Cayenne`);
+
     // Get flimsy hardwood scraps.
-    // visitUrl("shop.php?whichshop=lathe");
-    // if (availableAmount($item`flimsy hardwood scraps`) > 0) {
-    //   retrieveItem(1, $item`weeping willow wand`);
-    // }
+    visitUrl("shop.php?whichshop=lathe");
+    if (availableAmount($item`flimsy hardwood scraps`) > 0) {
+      retrieveItem(1, $item`weeping willow wand`);
+    }
     ensureItem(1, $item`obsidian nutcracker`);
 
     cliExecute("briefcase e spell");
@@ -1924,8 +1971,8 @@ function testSpellDamage() {
       ensureEffect($effect`Sigils of Yeg`);
     }
 
-    ensureEffect($effect`AAA-Charged`);
-    ensureEffect($effect`Lantern-Charged`);
+    ensureEffect($effect`AAA-Charged`); //+50% spell dmg
+    ensureEffect($effect`Lantern-Charged`); //+50% spell dmg, +100% item drop, shocking lick
 
     if (availableAmount($item`Bettie page`) > 0) {
       ensureEffect($effect`Paging Betty`);
@@ -1994,7 +2041,9 @@ function testSpellDamage() {
     doTest(TEST_SPELL);
     SPELL_TURNS = myTurncount() - TEMP_TURNS;
     setProperty("_hccsSpellTurns", SPELL_TURNS.toString());
-    useFamiliar(familiarFor100Run);
+    if (is100Run) {
+      useFamiliar(familiarFor100Run);
+    }
   }
 }
 
@@ -2005,8 +2054,11 @@ function testItemDrop() {
     fightSausageIfGuaranteed();
 
     if (myInebriety() < inebrietyLimit() - 1 && !have($effect`Sacré Mental`)) {
+      //closet Swizzler if we have any since it will be consumed if in inventory while drinking and we want to save it for sweet synthesis
+      putCloset($item`Swizzler`, itemAmount($item`Swizzler`));
       ensureOde(1);
       drink(1, $item`Sacramento wine`);
+      takeCloset($item`Swizzler`, closetAmount($item`Swizzler`));
     }
 
     // kramco messes up maps
@@ -2075,9 +2127,6 @@ function testItemDrop() {
     //ensureEffect($effect`The Spirit of Taking`);
     ensureEffect($effect`items.enh`);
 
-    // synthesis: collection
-    synthesisPlanner.synthesize($effect`Synthesis: Collection`);
-
     // see what class we are, maybe a couple other buffs
     if (myClass() === $class`pastamancer`) {
       cliExecute("barrelprayer buff");
@@ -2087,16 +2136,23 @@ function testItemDrop() {
     // if (myClass() === $class`sauceror`) {
     //   useSkill(1, $skill`Seek out a Bird`); // seek out a bird
     // }
+
     // Use bag of grain.
     ensureEffect($effect`Nearly All-Natural`);
 
     ensureEffect($effect`Feeling Lost`);
     ensureEffect($effect`Steely-Eyed Squint`);
 
+    //candle correspondence
+    if (have($item`Salsa Caliente candle`)) {
+      ensureEffect($effect`El Aroma de Salsa`);
+    }
+
     // get big smile of the blender if available, someday use this to replace something?
     // if (getPropertyInt("_campAwaySmileBuffs") === 1) {
     //   visitUrl("place.php?whichplace=campaway&action=campaway_sky");
     // }
+
     useFamiliar($familiar`Trick-or-Treating Tot`);
     equip($item`li'l ninja costume`); // ninja costume for 150% item
 
@@ -2104,6 +2160,8 @@ function testItemDrop() {
       "item, 2 booze drop, -equip broken champagne bottle, -equip surprisingly capacious handbag",
       false
     );
+
+    synthesisPlanner.synthesize($effect`Synthesis: Collection`);
 
     function itemdrop() {
       return (
@@ -2129,7 +2187,9 @@ function testItemDrop() {
     TEMP_TURNS = myTurncount();
     doTest(TEST_ITEM);
     ITEM_TURNS = myTurncount() - TEMP_TURNS;
-    useFamiliar(familiarFor100Run);
+    if (is100Run) {
+      useFamiliar(familiarFor100Run);
+    }
     setProperty("_hccsItemTurns", ITEM_TURNS.toString());
   }
 }
@@ -2142,17 +2202,20 @@ export function main(argString = "") {
   targetTurns.set(TEST_HOT_RES, 2);
   targetTurns.set(TEST_NONCOMBAT, 1);
   targetTurns.set(TEST_FAMILIAR, 30);
-  targetTurns.set(TEST_WEAPON, 5);
-  targetTurns.set(TEST_SPELL, 30);
-  targetTurns.set(TEST_ITEM, 2);
+  targetTurns.set(TEST_WEAPON, 1);
+  targetTurns.set(TEST_SPELL, 29);
+  targetTurns.set(TEST_ITEM, 1);
+
   try {
-    familiarFor100Run = toFamiliar(getProperty("_hccsFamiliar"));
-    if (familiarFor100Run == $familiar`none`) {
-      if (userConfirm("Is " + myFamiliar() + " the familiar you want?")) {
-        familiarFor100Run = myFamiliar();
-        setProperty("_hccsFamiliar", familiarFor100Run + "");
-      } else {
-        abort("Pick the correct familiar");
+    if (is100Run) {
+      familiarFor100Run = toFamiliar(getProperty("_hccsFamiliar"));
+      if (familiarFor100Run == $familiar`none`) {
+        if (userConfirm("Is " + myFamiliar() + " the familiar you want?")) {
+          familiarFor100Run = myFamiliar();
+          setProperty("_hccsFamiliar", familiarFor100Run + "");
+        } else {
+          abort("Pick the correct familiar");
+        }
       }
     }
 
@@ -2172,7 +2235,7 @@ export function main(argString = "") {
     }
 
     // All combat handled by our consult script (hccs_combat.ash).
-    cliExecute("ccs garbo");
+    cliExecute("ccs libram");
 
     // Turn off Lil' Doctor quests.
     setChoice(1340, 3);
@@ -2192,7 +2255,9 @@ export function main(argString = "") {
     equip($slot`acc2`, $item`Kremlin's Greatest Briefcase`);
     equip($slot`acc3`, $item`backup camera`);
 
-    useFamiliar(familiarFor100Run);
+    if (is100Run) {
+      useFamiliar(familiarFor100Run);
+    }
 
     testCoilWire();
     testHP();
@@ -2214,28 +2279,33 @@ export function main(argString = "") {
     visitUrl("peevpee.php?action=smashstone&confirm=on");
     print("Stone smashed. Get your PVP on!", "green");
     // spar for 6 fights
-    if (get("_daycareRecruits") === 0 && hippyStoneBroken() === true) {
-      visitUrl("place.php?whichplace=town_wrong&action=townwrong_boxingdaycare");
-      runChoice(3);
-      runChoice(1);
-      runChoice(4);
-      runChoice(5);
-      runChoice(4);
-    }
+    //NOTE: sparring actually costs an adv
+    // if (get("_daycareRecruits") === 0 && hippyStoneBroken() === true) {
+    //   visitUrl("place.php?whichplace=town_wrong&action=townwrong_boxingdaycare");
+    //   runChoice(3);
+    //   runChoice(1);
+    //   runChoice(4);
+    //   runChoice(5);
+    //   runChoice(4);
+    // }
 
-    cliExecute("pvp fame Loot Hunter");
+    // cliExecute("pvp fame Loot Hunter");
+
+    END_TIME = gametimeToInt();
+    //donate your body to science
+    print("Donating your body to science!", "blue");
+    visitUrl("council.php");
+    visitUrl("choice.php?whichchoice=1089&option=30&pwd");
   } finally {
     setProperty("autoSatisfyWithNPCs", "true");
     setProperty("autoSatisfyWithCoinmasters", getProperty("_saved_autoSatisfyWithCoinmasters"));
     setProperty("hpAutoRecovery", "0.8");
 
-    //useFamiliar(familiarFor100Run);
-
     print(
       "This loop took " +
-        floor((gametimeToInt() - START_TIME) / 1000 / 60) +
+        floor((END_TIME - START_TIME) / 1000 / 60) +
         " minutes and " +
-        ceil(((gametimeToInt() - START_TIME) / 1000) % 60) +
+        ceil(((END_TIME - START_TIME) / 1000) % 60) +
         " seconds, for a 1 day, " +
         myTurncount() +
         " turn HCCS run. Organ use was " +
