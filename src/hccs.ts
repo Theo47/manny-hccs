@@ -38,6 +38,7 @@ import {
   getInventory,
   getPower,
   getProperty,
+  getWorkshed,
   handlingChoice,
   haveEffect,
   haveSkill,
@@ -93,6 +94,7 @@ import {
   putCloset,
   takeCloset,
   closetAmount,
+  restoreMp,
 } from "kolmafia";
 import {
   $class,
@@ -174,7 +176,8 @@ const justKillTheThing = Macro.trySkill($skill`Curse of Weaksauce`)
 // Sweet Synthesis plan.
 // This is the sequence of synthesis effects; we will, if possible, come up with a plan for allocating candy to each of these.
 const synthesisPlanner = new SynthesisPlanner(
-  $effects`Synthesis: Learning, Synthesis: Smart, Synthesis: Strong, Synthesis: Cool, Synthesis: Hot, Synthesis: Collection`
+  //$effects`Synthesis: Learning, Synthesis: Smart, Synthesis: Strong, Synthesis: Cool, Synthesis: Collection`
+  $effects`Synthesis: Learning, Synthesis: Smart, Synthesis: Strong, Synthesis: Cool`
 );
 
 /*
@@ -469,6 +472,11 @@ function testCoilWire() {
     // // Make sure initiative-tracking works.
     // visitUrl("place.php?whichplace=town_right&action=townright_vote");
 
+    while (get("_smithsnessSummons") < 3) {
+      ensureMpTonic(6);
+      useSkill($skill`Summon Smithsness`);
+    }
+
     //TODO: i don't have borrowed time so need to eat/drink here to get to 60 adventures
     if (myFullness() == 0) {
       buy($item`pickled egg`, 2);
@@ -479,7 +487,7 @@ function testCoilWire() {
     doTest(TEST_COIL_WIRE);
   }
 
-  if (myTurncount() < 60) error("Something went wrong coiling wire.");
+  if (myTurncount() < 60) abort("Something went wrong coiling wire.");
 }
 
 function testHP() {
@@ -663,7 +671,7 @@ function testHP() {
     // ensure_effect($effect[hulkien]);
     ensureEffect($effect`Favored by Lyle`);
     ensureEffect($effect`Starry-Eyed`);
-    //ensureEffect($effect`Triple-Sized`);
+    ensureEffect($effect`Triple-Sized`);
     ensureEffect($effect`Feeling Excited`);
     ensureEffect($effect`We're All Made of Starfish`); // Beach Comb - should bridge all the way to spell dmg.
     //TODO: uncomment when i acquire skill
@@ -672,12 +680,12 @@ function testHP() {
     ensureEffect($effect`Merry Smithsness`);
     useSkill(1, $skill`Incredible Self-Esteem`); //might be something useful
 
-    visitUrl("desc_effect.php?whicheffect=af64d06351a3097af52def8ec6a83d9b"); //discover g9 effect
-    if (getPropertyInt("_g9Effect") >= 200) {
-      wishEffect($effect`Experimental Effect G-9`);
-    } else {
-      wishEffect($effect`New and Improved`);
-    }
+    // visitUrl("desc_effect.php?whicheffect=af64d06351a3097af52def8ec6a83d9b"); //discover g9 effect
+    // if (getPropertyInt("_g9Effect") >= 200) {
+    //   wishEffect($effect`Experimental Effect G-9`);
+    // } else {
+    //   wishEffect($effect`New and Improved`);
+    // }
 
     //candle correspondence
     if (have($item`votive of confidence`)) {
@@ -1008,7 +1016,7 @@ function testHP() {
     equip($item`Kramco Sausage-o-Matic&trade;`);
     equip($slot`acc3`, $item`backup camera`);
     //equip($slot`shirt`, $item`none`);
-    while (get("_backUpUses") < 11) {
+    while (get("_backUpUses") < 7) {
       if (!haveEffect($effect`Tomes of Opportunity`)) {
         setChoice(1324, 1); //go to +mys exp buff nc
       } else {
@@ -1101,8 +1109,7 @@ function testHP() {
       (haveSkill($skill`Gingerbread Mob Hit`) && !getPropertyBoolean("_gingerbreadMobHitUsed"))
     ) {
       ensureNpcEffect($effect`Glittering Eyelashes`, 5, $item`glittery mascara`);
-      //TODO: uncomment when i learn skill
-      //ensureSong($effect`The Magical Mojomuscular Melody`);
+      ensureSong($effect`The Magical Mojomuscular Melody`);
       ensureSong($effect`Polka of Plenty`);
       ensureEffect($effect`inscrutable gaze`);
       ensureEffect($effect`pride of the puffin`);
@@ -1340,8 +1347,7 @@ function testMox() {
     // ensure_effect($effect[Tomato Power]);
     ensureEffect($effect`Disco Fever`);
     ensureEffect($effect`Blubbered Up`);
-    //TODO: uncomment when i learn skill
-    //ensureEffect($effect`Mariachi Mood`);
+    ensureEffect($effect`Mariachi Mood`);
     ensureNpcEffect($effect`Butt-Rock Hair`, 5, $item`hair spray`);
     use(availableAmount($item`rhinestone`), $item`rhinestone`);
     if (haveEffect($effect`Unrunnable Face`) === 0) {
@@ -1403,13 +1409,14 @@ function testHotRes() {
         throw "Something went wrong at LavaCo.";
       }
       equip($item`Fourth of May Cosplay Saber`);
-      equip($item`familiar scrapbook`);
+      equip($slot`offhand`, $item`industrial fire extinguisher`);
       //equip($item`vampyric cloake`);
       setProperty("choiceAdventure1387", "3");
       mapMonster($location`LavaCo&trade; Lamp Factory`, $monster`Factory worker (female)`);
       setAutoAttack(0);
       withMacro(
         Macro.trySkill($skill`become a cloud of mist`)
+          .skill($skill`Fire Extinguisher: Foam Yourself`)
           .skill($skill`meteor shower`)
           .skill($skill`use the force`),
         runCombat
@@ -1422,7 +1429,7 @@ function testHotRes() {
 
     // synth hot TODO: check for the right candyblast candies and summon candy hearts if not
 
-    synthesisPlanner.synthesize($effect`Synthesis: Hot`);
+    //synthesisPlanner.synthesize($effect`Synthesis: Hot`);
 
     // add +5 hot res to KGB, relies on Ezandora's script, naturally
     cliExecute("briefcase e hot");
@@ -1451,20 +1458,6 @@ function testHotRes() {
     autosell(10, $item`hot nuggets`);
     autosell(10, $item`twinkly powder`);
 
-    if (availableAmount($item`hot powder`) > 0) {
-      ensureEffect($effect`Flame-Retardant Trousers`);
-    }
-
-    if (
-      availableAmount($item`sleaze powder`) > 0 ||
-      availableAmount($item`lotion of sleaziness`) > 0
-    ) {
-      ensurePotionEffect($effect`Sleazy Hands`, $item`lotion of sleaziness`);
-    }
-
-    // wish for healthy green glow, should fall through
-    // wish_effect($effect`healthy green glow`);
-
     ensureEffect($effect`Elemental Saucesphere`);
     ensureEffect($effect`Astral Shell`);
 
@@ -1482,7 +1475,7 @@ function testHotRes() {
     //   equip($item`cracker`);
     // }
 
-    if (!getPropertyBoolean("_mayoTankSoaked")) {
+    if (!getPropertyBoolean("_mayoTankSoaked") && getWorkshed() === $item`portable Mayo Clinic`) {
       cliExecute("mayosoak");
     }
 
@@ -1574,11 +1567,11 @@ function testNonCombat() {
     // Pool buff. Should fall through to weapon damage.
     ensureEffect($effect`Billiards Belligerence`);
 
-    //equip($slot`acc3`, $item`Powerful Glove`);
+    equip($slot`acc3`, $item`Powerful Glove`);
     //ensureEffect($effect`gummed shoes`);
     ensureEffect($effect`The Sonata of Sneakiness`);
     ensureEffect($effect`Smooth Movements`);
-    //ensureEffect($effect`Invisible Avatar`);
+    ensureEffect($effect`Invisible Avatar`);
     ensureEffect($effect`Silent Running`);
     ensureEffect($effect`Feeling Lonely`);
 
@@ -1811,10 +1804,8 @@ function testWeaponDamage() {
     ensureEffect($effect`Rage of the Reindeer`);
     ensureEffect($effect`Frenzied, Bloody`);
     ensureEffect($effect`Scowl of the Auk`);
-    //TODO: uncomment when you learn this
-    // ensureEffect($effect`Disdain of the War Snapper`);
-    //TODO: uncomment when you learn this
-    // ensureEffect($effect`Tenacity of the Snapper`);
+    ensureEffect($effect`Disdain of the War Snapper`);
+    ensureEffect($effect`Tenacity of the Snapper`);
     ensureSong($effect`Jackasses\' Symphony of Destruction`);
     if (availableAmount($item`lov elixir \#3`) > 0) {
       ensureEffect($effect`The Power of LOV`);
@@ -1998,6 +1989,9 @@ function testSpellDamage() {
     }
     setAutoAttack(0);
 
+    // wish for healthy green glow, +10 familiar weight
+    wishEffect($effect`healthy green glow`);
+
     //useFamiliar($familiar`disembodied hand`);
     useFamiliar($familiar`Left-Hand Man`);
     maximize("spell damage", false);
@@ -2161,7 +2155,7 @@ function testItemDrop() {
       false
     );
 
-    synthesisPlanner.synthesize($effect`Synthesis: Collection`);
+    //synthesisPlanner.synthesize($effect`Synthesis: Collection`);
 
     function itemdrop() {
       return (
@@ -2199,7 +2193,7 @@ export function main(argString = "") {
   targetTurns.set(TEST_MUS, 1);
   targetTurns.set(TEST_MYS, 1);
   targetTurns.set(TEST_MOX, 1);
-  targetTurns.set(TEST_HOT_RES, 2);
+  targetTurns.set(TEST_HOT_RES, 1);
   targetTurns.set(TEST_NONCOMBAT, 1);
   targetTurns.set(TEST_FAMILIAR, 30);
   targetTurns.set(TEST_WEAPON, 1);
