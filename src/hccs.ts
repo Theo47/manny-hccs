@@ -109,19 +109,6 @@ import {
 // rewrite map uses to not use the c2t thing
 // figure out synth
 
-const TEST_HP = 1;
-const TEST_MUS = 2;
-const TEST_MYS = 3;
-const TEST_MOX = 4;
-const TEST_FAMILIAR = 5;
-const TEST_WEAPON = 6;
-const TEST_SPELL = 7;
-const TEST_NONCOMBAT = 8;
-const TEST_ITEM = 9;
-const TEST_HOT_RES = 10;
-const TEST_COIL_WIRE = 11;
-const DONATE = 30;
-
 let moxieStat = 0;
 let itemdrop = 0;
 let boozedrop = 0;
@@ -271,6 +258,52 @@ export function testDone(testNum: number) {
   return !containsText(text, `<input type=hidden name=option value=${testNum}>`);
 }
 
+export function testDoneNew(testName: string) {
+  function test() {
+    switch (testName) {
+      case "HP":
+        return "Donate Blood";
+      case "mys":
+        return "Build Playground Mazes";
+      case "mus":
+        return "Feed The Children";
+      case "mox":
+        return "Feed Conspirators";
+      case "noncom":
+        return "Be A Living Statue";
+      case "famwt":
+        return "Breed More Collies";
+      case "item":
+        return "Make Margaritas";
+      case "hotres":
+        return "Clean Steam Tunnels";
+      case "weapon":
+        return "Reduce Gazelle Population";
+      case "spell":
+        return "Make Sausage";
+      case "coil":
+        return "Coil Wire";
+      default:
+        throw "Bad test vaue in testdone function";
+    }
+  }
+  if (get("csServicesPerformed").includes(test())) return true;
+  else return false;
+}
+
+const TEST_HP = 1;
+const TEST_MUS = 2;
+const TEST_MYS = 3;
+const TEST_MOX = 4;
+const TEST_FAMILIAR = 5;
+const TEST_WEAPON = 6;
+const TEST_SPELL = 7;
+const TEST_NONCOMBAT = 8;
+const TEST_ITEM = 9;
+const TEST_HOT_RES = 10;
+const TEST_COIL_WIRE = 11;
+const DONATE = 30;
+
 function doTest(testNum: number) {
   if (!testDone(testNum)) {
     visitUrl(`choice.php?whichchoice=1089&option=${testNum}`);
@@ -294,139 +327,6 @@ export function withMacro<T>(macro: Macro, action: () => T) {
   } finally {
     Macro.clearSaved();
   }
-}
-
-if (myPathId() !== 25) abort();
-
-// Don't buy stuff from NPC stores.
-setProperty("_saved_autoSatisfyWithNPCs", getProperty("autoSatisfyWithNPCs"));
-setProperty("autoSatisfyWithNPCs", "false");
-
-setProperty("recoveryScript", "");
-
-// Do buy stuff from coinmasters (hermit).
-setProperty("_saved_autoSatisfyWithCoinmasters", getProperty("autoSatisfyWithCoinmasters"));
-setProperty("autoSatisfyWithCoinmasters", "true");
-// setProperty("logPreferenceChange", "true");
-
-// Initialize council.
-visitUrl("council.php");
-
-if (get("backupCameraReverserEnabled") === false) {
-  cliExecute("backupcamera reverser on");
-}
-
-// All combat handled by our consult script (hccs_combat.ash).
-cliExecute("ccs libramMacro");
-
-// Turn off Lil' Doctor quests.
-setChoice(1340, 3);
-
-// in case you're re-running it
-setAutoAttack(0);
-
-// Default equipment.
-equip($item`Iunion Crown`);
-equip($slot`shirt`, $item`none`);
-equip($item`vampyric cloake`);
-equip($item`Fourth of May Cosplay Saber`);
-// equip($item[Kramco Sausage-o-Matic&trade;]);
-equip($item`old sweatpants`);
-equip($slot`acc1`, $item`Eight Days a Week Pill Keeper`);
-equip($slot`acc2`, $item`Powerful Glove`);
-equip($slot`acc3`, $item`Lil' Doctor™ bag`);
-
-if (!testDone(TEST_COIL_WIRE)) {
-  setClan("Bonus Adventures from Hell");
-  /*
-  if (get("_clanFortuneConsultUses") < 3) {
-    while (get("_clanFortuneConsultUses") < 3) {
-      cliExecute("fortune cheesefax");
-      cliExecute("wait 5");
-    }
-  }
-*/
-  if (myLevel() === 1 && mySpleenUse() === 0) {
-    while (get("_universeCalculated") < get("skillLevel144")) {
-      cliExecute("numberology 69");
-    }
-  }
-
-  // retrieve_item(1, $item[fish hatchet]);
-
-  // get cowboy boots
-  visitUrl("place.php?whichplace=town_right&action=townright_ltt");
-
-  // Vote.
-  // TODO: make this also work for PM
-  if (itemAmount($item`"I Voted!" sticker`) === 0) {
-    visitUrl("place.php?whichplace=town_right&action=townright_vote");
-    visitUrl("choice.php?option=1&whichchoice=1331&g=2&local%5B%5D=1&local%5B%5D=3");
-    // Make sure initiative-tracking works.
-    // visitUrl("place.php?whichplace=town_right&action=townright_vote");
-  }
-
-  // Chateau piggy bank
-  visitUrl("place.php?whichplace=chateau&action=chateau_desk1");
-  // autosell(1, $item[gremlin juice]);
-  // autosell(1, $item[ectoplasm <i>au jus</i>]);
-  // autosell(1, $item[clove-flavored lip balm]);
-
-  // Sell pork gems + tent
-  visitUrl("tutorial.php?action=toot");
-  tryUse(1, $item`letter from King Ralph XI`);
-  tryUse(1, $item`pork elf goodies sack`);
-  autosell(5, $item`baconstone`);
-  // autosell(5, $item[porquoise]);
-  autosell(5, $item`hamethyst`);
-
-  // Buy toy accordion
-  ensureItem(1, $item`toy accordion`);
-
-  // make pantogram pants for hilarity and spell damage
-  if (availableAmount($item`pantogram pants`) === 0) {
-    // retrieveItem(1, $item`ten-leaf clover`);
-    cliExecute("pantogram hot|-combat|silent");
-  }
-
-  ensureSong($effect`The Magical Mojomuscular Melody`);
-
-  if (haveEffect($effect`Inscrutable Gaze`) === 0) {
-    ensureMpTonic(10);
-    ensureEffect($effect`Inscrutable Gaze`);
-  }
-
-  // Campsite
-  if (haveEffect($effect`That's Just Cloud-Talk, Man`) === 0) {
-    visitUrl("place.php?whichplace=campaway&action=campaway_sky");
-  }
-
-  // Depends on Ez's Bastille script.
-  cliExecute("bastille myst brutalist");
-
-  // Upgrade saber for fam wt
-  visitUrl("main.php?action=may4");
-  runChoice(4);
-
-  // Put on some regen gear
-  equip($item`Iunion Crown`);
-  equip($slot`shirt`, $item`none`);
-  equip($item`Fourth of May Cosplay Saber`);
-  // equip($item[Kramco Sausage-o-Matic&trade;]);
-  equip($item`old sweatpants`);
-  equip($slot`acc1`, $item`Eight Days a Week Pill Keeper`);
-  equip($slot`acc2`, $item`Powerful Glove`);
-  equip($slot`acc3`, $item`Retrospecs`);
-
-  ensureCreateItem(1, $item`borrowed time`);
-  use(1, $item`borrowed time`);
-
-  // NOTE: No turn 0 sausage fight!
-
-  // should probably fight, digitize, wink a bishop or something here
-
-  // QUEST - Coil Wire
-  doTest(TEST_COIL_WIRE);
 }
 
 if (myTurncount() < 60) throw "Something went wrong coiling wire.";

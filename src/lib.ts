@@ -43,7 +43,19 @@ import {
   wait,
   weightAdjustment,
 } from "kolmafia";
-import { $effect, $effects, $item, $location, $skill, get, Macro, property } from "libram";
+import {
+  $effect,
+  $effects,
+  $item,
+  $location,
+  $skill,
+  get,
+  Macro,
+  PropertiesManager,
+  property,
+} from "libram";
+
+export const propertyManager = new PropertiesManager();
 
 export function getPropertyInt(name: string) {
   const str = getProperty(name);
