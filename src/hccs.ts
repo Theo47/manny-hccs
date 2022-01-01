@@ -1109,7 +1109,8 @@ function testHP() {
       (haveSkill($skill`Gingerbread Mob Hit`) && !getPropertyBoolean("_gingerbreadMobHitUsed"))
     ) {
       ensureNpcEffect($effect`Glittering Eyelashes`, 5, $item`glittery mascara`);
-      ensureSong($effect`The Magical Mojomuscular Melody`);
+      //TODO: uncomment when i learn skill
+      //ensureSong($effect`The Magical Mojomuscular Melody`);
       ensureSong($effect`Polka of Plenty`);
       ensureEffect($effect`inscrutable gaze`);
       ensureEffect($effect`pride of the puffin`);
@@ -1347,7 +1348,8 @@ function testMox() {
     // ensure_effect($effect[Tomato Power]);
     ensureEffect($effect`Disco Fever`);
     ensureEffect($effect`Blubbered Up`);
-    ensureEffect($effect`Mariachi Mood`);
+    //TODO: uncomment when i learn skill
+    //ensureEffect($effect`Mariachi Mood`);
     ensureNpcEffect($effect`Butt-Rock Hair`, 5, $item`hair spray`);
     use(availableAmount($item`rhinestone`), $item`rhinestone`);
     if (haveEffect($effect`Unrunnable Face`) === 0) {
@@ -1399,6 +1401,10 @@ function testHotRes() {
     //equip($slot`acc3`, $item`Lil\' Doctor&trade; Bag`);
 
     if (availableAmount($item`heat-resistant gloves`) === 0) {
+      setAutoAttack(0);
+      equip($item`Fourth of May Cosplay Saber`);
+      equip($slot`offhand`, $item`industrial fire extinguisher`);
+      //equip($item`vampyric cloake`);
       adv1($location`LavaCo&trade; Lamp Factory`, -1, "");
       if (
         !containsText(
@@ -1408,12 +1414,8 @@ function testHotRes() {
       ) {
         throw "Something went wrong at LavaCo.";
       }
-      equip($item`Fourth of May Cosplay Saber`);
-      equip($slot`offhand`, $item`industrial fire extinguisher`);
-      //equip($item`vampyric cloake`);
       setProperty("choiceAdventure1387", "3");
       mapMonster($location`LavaCo&trade; Lamp Factory`, $monster`Factory worker (female)`);
-      setAutoAttack(0);
       withMacro(
         Macro.trySkill($skill`become a cloud of mist`)
           .skill($skill`Fire Extinguisher: Foam Yourself`)
@@ -1672,6 +1674,9 @@ function testFamiliarWeight() {
     ensureEffect($effect`You Can Really Taste the Dormous`);
     //if (!getPropertyBoolean("_clanFortuneBuffUsed")) cliExecute("fortune buff familiar");
 
+    // wish for healthy green glow, +10 familiar weight
+    //wishEffect($effect`healthy green glow`);
+
     // checking here to see if we had a tome summon for a cracker or if we should use BBB
     // if (availableAmount($item`cracker`) > 0) {
     //   useFamiliar($familiar`exotic parrot`);
@@ -1804,8 +1809,10 @@ function testWeaponDamage() {
     ensureEffect($effect`Rage of the Reindeer`);
     ensureEffect($effect`Frenzied, Bloody`);
     ensureEffect($effect`Scowl of the Auk`);
-    ensureEffect($effect`Disdain of the War Snapper`);
-    ensureEffect($effect`Tenacity of the Snapper`);
+    //TODO: uncomment when you learn this
+    // ensureEffect($effect`Disdain of the War Snapper`);
+    //TODO: uncomment when you learn this
+    // ensureEffect($effect`Tenacity of the Snapper`);
     ensureSong($effect`Jackasses\' Symphony of Destruction`);
     if (availableAmount($item`lov elixir \#3`) > 0) {
       ensureEffect($effect`The Power of LOV`);
@@ -1989,8 +1996,8 @@ function testSpellDamage() {
     }
     setAutoAttack(0);
 
-    // wish for healthy green glow, +10 familiar weight
-    wishEffect($effect`healthy green glow`);
+    // wish for +200% spell damage
+    wishEffect($effect`Witch Breaded`);
 
     //useFamiliar($familiar`disembodied hand`);
     useFamiliar($familiar`Left-Hand Man`);
