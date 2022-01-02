@@ -8,10 +8,10 @@ import {
   ensureOde,
   ensurePotionEffect,
   ensureSewerItem,
-  getPropertyBoolean,
-  getPropertyInt,
   ensureSong,
   fax,
+  getPropertyBoolean,
+  getPropertyInt,
   horse,
   kill,
   mapMonster,
@@ -26,15 +26,18 @@ import {
   autosell,
   availableAmount,
   buy,
+  ceil,
   chatPrivate,
   cliExecute,
   cliExecuteOutput,
+  closetAmount,
   containsText,
   create,
   drink,
   eat,
   equip,
   equippedItem,
+  familiarWeight,
   floor,
   gametimeToInt,
   getCampground,
@@ -70,6 +73,8 @@ import {
   myTurncount,
   numericModifier,
   print,
+  putCloset,
+  restoreMp,
   retrieveItem,
   round,
   runChoice,
@@ -79,6 +84,7 @@ import {
   setProperty,
   sweetSynthesis,
   sweetSynthesisResult,
+  takeCloset,
   toFamiliar,
   toFloat,
   toInt,
@@ -91,12 +97,6 @@ import {
   useSkill,
   visitUrl,
   wait,
-  familiarWeight,
-  ceil,
-  putCloset,
-  takeCloset,
-  closetAmount,
-  restoreMp,
 } from "kolmafia";
 import {
   $class,
@@ -111,6 +111,7 @@ import {
   $phylum,
   $skill,
   $slot,
+  $slots,
   $stat,
   adventureMacro,
   adventureMacroAuto,
@@ -118,7 +119,6 @@ import {
   get,
   have,
   Macro,
-  $slots,
   Witchess,
 } from "libram";
 import { error } from "libram/dist/console";
@@ -133,7 +133,7 @@ import {
   tonicsLeft,
 } from "libram/dist/resources/2014/DNALab";
 
-var is100Run = false;
+const is100Run = false;
 
 // rewrite all combats
 // create a defaultFamiliar function that chooses somewhat dynamically
@@ -167,23 +167,23 @@ let HOT_RES_TURNS = 0;
 
 let TEMP_TURNS = 0;
 
-var targetTurns = new Map();
+const targetTurns = new Map();
 
-var familiarFor100Run: Familiar;
+let familiarFor100Run: Familiar;
 
 // test order will be stats, hot, item, NC, Fam, weapon, spell
 
 const START_TIME = gametimeToInt();
 
-var END_TIME = gametimeToInt();
+let END_TIME = gametimeToInt();
 
 const justKillTheThing = Macro.trySkill($skill`Curse of Weaksauce`)
   .trySkill($skill`Micrometeorite`)
   .trySkill($skill`Sing Along`)
-  .trySkill($skill`extract`)
+  .trySkill($skill`Extract`)
   .trySkill($skill`Stuffed Mortar Shell`)
   //.skill($skill`Candyblast`)
-  .skill($skill`saucestorm`)
+  .skill($skill`Saucestorm`)
   .step("repeat");
 
 // Sweet Synthesis plan.
@@ -202,15 +202,15 @@ function useDefaultFamiliar() {
   if (is100Run) {
     useFamiliar(familiarFor100Run);
   }
-  else if (get("camelSpit") < 100 && !get("csServicesPerformed").split(",").includes("Reduce Gazelle Population") && have($familiar`melodramedary`)) {
-    useFamiliar($familiar`melodramedary`);
+  else if (get("camelSpit") < 100 && !get("csServicesPerformed").split(",").includes("Reduce Gazelle Population") && have($familiar`Melodramedary`)) {
+    useFamiliar($familiar`Melodramedary`);
     if (have($item`dromedary drinking helmet`)) equip($item`dromedary drinking helmet`);
-  } else if ( have($familiar`shorter-order cook`) &&
+  } else if ( have($familiar`Shorter-Order Cook`) &&
     availableAmount($item`short stack of pancakes`) === 0 &&
-    haveEffect($effect`shortly stacked`) === 0 &&
+    haveEffect($effect`Shortly Stacked`) === 0 &&
     !get("csServicesPerformed").split(",").includes("Breed More Collies")
   ) {
-    useFamiliar($familiar`shorter-order cook`);
+    useFamiliar($familiar`Shorter-Order Cook`);
   } else if (
     have($familiar`Garbage Fire`) && availableAmount($item`rope`) < 1 &&
     availableAmount($item`burning newspaper`) + availableAmount($item`burning paper crane`) < 1
@@ -281,7 +281,7 @@ function fightSausageIfGuaranteed() {
     //equip($item`Iunion Crown`);
     //equip($slot`shirt`, $item`none`);
     equip($item`Fourth of May Cosplay Saber`);
-    equip($item`Kramco Sausage-o-Matic&trade;`);
+    equip($item`Kramco Sausage-o-Matic™`);
     equip($item`LOV Epaulettes`);
     //equip($item`old sweatpants`);
     //equip($slot`acc1`, $item`Eight Days a Week Pill Keeper`);
@@ -466,7 +466,7 @@ function levelUp() {
       if (availableAmount(lovePotion) === 0) {
         useSkill(1, $skill`Love Mixology`);
       }
-      visitUrl("desc_effect.php?whicheffect=" + loveEffect.descid);
+      visitUrl(`desc_effect.php?whicheffect=${  loveEffect.descid}`);
       if (
         numericModifier(loveEffect, "mysticality") > 10 &&
         numericModifier(loveEffect, "muscle") > -30 &&
@@ -479,7 +479,7 @@ function levelUp() {
 
     // bring along dark horse for the meats
     //horse("dark");
-    
+
     // Boxing Daycare
     ensureEffect($effect`Uncucumbered`);
 
@@ -583,14 +583,14 @@ function levelUp() {
       visitUrl("adventure.php?snarfblat=477");
       runChoice(1);
     }
-    equip($slot`acc2`, $item`kremlin's greatest briefcase`);
+    equip($slot`acc2`, $item`Kremlin's Greatest Briefcase`);
     setChoice(1204, 1);
     while (getPropertyInt("_gingerbreadCityTurns") < 5) {
       useDefaultFamiliar();
       adventureMacro(
         $location`Gingerbread Train Station`,
         Macro.trySkill($skill`KGB tranquilizer dart`)
-          .trySkill($skill`snokebomb`)
+          .trySkill($skill`Snokebomb`)
           .abort()
       );
     }
@@ -624,26 +624,26 @@ function levelUp() {
      //TODO: uncomment when i acquire skill
      //ensureSong($effect`The Magical Mojomuscular Melody`);
      ensureNpcEffect($effect`Glittering Eyelashes`, 5, $item`glittery mascara`);
-     
+
      // Plan is for Beach Comb + PK buffs to fall all the way through to item -> hot res -> fam weight and spell dmg.
      ensureEffect($effect`We're All Made of Starfish`);
      ensureEffect($effect`Do I Know You From Somewhere?`);
- 
+
      ensureEffect($effect`Merry Smithsness`);
      useSkill(1, $skill`Incredible Self-Esteem`); //might be something useful
- 
+
      // visitUrl("desc_effect.php?whicheffect=af64d06351a3097af52def8ec6a83d9b"); //discover g9 effect
      // if (getPropertyInt("_g9Effect") >= 200) {
      //   wishEffect($effect`Experimental Effect G-9`);
      // } else {
      //   wishEffect($effect`New and Improved`);
      // }
- 
+
      //candle correspondence
      if (have($item`votive of confidence`)) {
        ensureEffect($effect`Confidence of the Votive`);
      }
- 
+
      // if (myInebriety() == 0 && getPropertyInt("_g9Effect") <250) {
      //   //closet Swizzler if we have any since it will be consumed if in inventory while drinking and we want to save it for sweet synthesis
      //   putCloset($item`Swizzler`, itemAmount($item`Swizzler`));
@@ -651,9 +651,9 @@ function levelUp() {
      //   cliExecute("drink 1 Bee's Knees");
      //   takeCloset($item`Swizzler`, closetAmount($item`Swizzler`));
      // }
- 
+
      //TODO: get other stat buffs?
- 
+
      //TODO: uncomment if i acquire snojo
      // 10 snojo fights to while +stat is on, also getting ice rice
      // if (get("_snojoFreeFights") < 10) {
@@ -672,10 +672,10 @@ function levelUp() {
      //     adventureMacroAuto($location`The X-32-F Combat Training Snowman`, kill());
      //   }
      // }
- 
+
      // Don't use Kramco here.
      equip($slot`off-hand`, $item`familiar scrapbook`);
-    
+
     //TODO: uncomment if i get ghost
     // if (haveEffect($effect`holiday yoked`) === 0 && get("_kgbTranquilizerDartUses") < 3) {
     //   equip($slot`acc1`, $item`Kremlin's Greatest Briefcase`);
@@ -765,7 +765,7 @@ function levelUp() {
       }
       setProperty("choiceAdventure1387", "3");
       mapMonster($location`The Skeleton Store`, $monster`novelty tropical skeleton`);
-      withMacro(Macro.skill($skill`use the force`), runCombat);
+      withMacro(Macro.skill($skill`Use the Force`), runCombat);
       if (handlingChoice()) runChoice(3);
       // setProperty("mappingMonsters", "false");
     }
@@ -815,8 +815,8 @@ function levelUp() {
     // }
 
     if (!get("hasRange")) {
-      ensureItem(1, $item`Dramatic&trade; range`);
-      use(1, $item`Dramatic&trade; range`);
+      ensureItem(1, $item`Dramatic™ range`);
+      use(1, $item`Dramatic™ range`);
     }
 
     useSkill(1, $skill`Advanced Saucecrafting`);
@@ -835,8 +835,8 @@ function levelUp() {
     // LOV tunnel for elixirs, epaulettes, and heart surgery
     if (!get("_loveTunnelUsed")) {
       useDefaultFamiliar();
-      ensureEffect($effect`carol of the bulls`);
-      ensureEffect($effect`carol of the hells`);
+      ensureEffect($effect`Carol of the Bulls`);
+      ensureEffect($effect`Carol of the Hells`);
       setChoice(1222, 1); // Entrance
       setChoice(1223, 1); // Fight LOV Enforcer
       setChoice(1224, 2); // LOV Epaulettes
@@ -853,7 +853,7 @@ function levelUp() {
       setAutoAttack(0);
     }
 
-    equip($item`LOV epaulettes`);
+    equip($item`LOV Epaulettes`);
 
     // spend 5 turns in DMT, skipping joy and cert, just get stats
     // while (get("_machineTunnelsAdv") < 5) {
@@ -877,7 +877,7 @@ function levelUp() {
 
       //witchess fights
       if (get("_witchessFights") < 5) {
-        equip($item`fourth of may cosplay saber`);
+        equip($item`Fourth of May Cosplay Saber`);
         useDefaultFamiliar();
         while (get("_witchessFights") === 0) {
           Macro.step(justKillTheThing).setAutoAttack();
@@ -905,14 +905,14 @@ function levelUp() {
           setAutoAttack(0);
         }
       }
-  
+
       equip($item`makeshift garbage shirt`);
-  
+
       // get witchess buff, this should fall all the way through to fam wt
-      if (haveEffect($effect`puzzle champ`) === 0) {
+      if (haveEffect($effect`Puzzle Champ`) === 0) {
         cliExecute("witchess");
       }
-  
+
       // Checking if it's gerald(ine) and accepting the quest if it is, otherwise just here to party.
     if (get("_questPartyFair") === "unstarted") {
       setProperty("choiceAventure1322", "");
@@ -930,22 +930,22 @@ function levelUp() {
         setChoice(1324, 5);
       // }
     }
-    
+
     setChoice(1325, 2); // +20% mys exp buff
-  
+
       // Professor 9x free sausage fight @ NEP
       if (get("_sausageFights") === 0) {
         useFamiliar($familiar`Pocket Professor`);
         tryEquip($item`Pocket Professor memory chip`);
-        equip($item`Kramco Sausage-o-Matic&trade;`);
+        equip($item`Kramco Sausage-o-Matic™`);
         equip($slot`acc2`, $item`Brutal brogues`);
         equip($slot`acc3`, $item`Beach Comb`);
-  
+
         while (getPropertyInt("_sausageFights") === 0) {
           if (myHp() < 0.8 * myMaxhp()) {
             visitUrl("clan_viplounge.php?where=hottub");
           }
-  
+
           //setChoice(1322, 2);
           adventureMacroAuto(
             $location`The Neverending Party`,
@@ -956,10 +956,10 @@ function levelUp() {
           setAutoAttack(0);
         }
       }
-  
+
       useDefaultFamiliar();
-  
-      equip($item`Kramco Sausage-o-Matic&trade;`);
+
+      equip($item`Kramco Sausage-o-Matic™`);
       equip($slot`acc3`, $item`backup camera`);
       //equip($slot`shirt`, $item`none`);
       while (get("_backUpUses") < 7) {
@@ -1094,7 +1094,7 @@ function levelUp() {
         useDefaultFamiliar();
         adventureMacroAuto(
           $location`The Neverending Party`,
-          Macro.trySkill($skill`feel pride`).step(justKillTheThing)
+          Macro.trySkill($skill`Feel Pride`).step(justKillTheThing)
         );
       } else if (get("_neverendingPartyFreeTurns") < 10) {
         useDefaultFamiliar();
@@ -1103,7 +1103,7 @@ function levelUp() {
         useDefaultFamiliar();
         adventureMacroAuto(
           $location`The Neverending Party`,
-          Macro.trySkill($skill`chest x-ray`).trySkill($skill`gingerbread mob hit`)
+          Macro.trySkill($skill`Chest X-Ray`).trySkill($skill`Gingerbread Mob Hit`)
         );
       }
     }
@@ -1160,14 +1160,14 @@ function testMox() {
 
     if (moxTurns() > targetTurns.get(TEST_MOX)) {
       throw (
-        "Can't achieve target turns for moxie test. Current: " +
-        moxTurns() +
-        " Target: " +
-        targetTurns.get(TEST_MOX)
+        `Can't achieve target turns for moxie test. Current: ${
+        moxTurns()
+        } Target: ${
+        targetTurns.get(TEST_MOX)}`
       );
     }
 
-    setProperty("_hccsMoxTurnsUncapped", moxTurns() + "");
+    setProperty("_hccsMoxTurnsUncapped", `${moxTurns()  }`);
     TEMP_TURNS = myTurncount();
     doTest(TEST_MOX);
     MOX_TURNS = myTurncount() - TEMP_TURNS;
@@ -1213,14 +1213,14 @@ function testHP() {
 
     if (hpTurns() > targetTurns.get(TEST_HP)) {
       throw (
-        "Can't achieve target turns for HP test. Current: " +
-        hpTurns() +
-        " Target: " +
-        targetTurns.get(TEST_HP)
+        `Can't achieve target turns for HP test. Current: ${
+        hpTurns()
+        } Target: ${
+        targetTurns.get(TEST_HP)}`
       );
     }
 
-    setProperty("_hccsHpTurnsUncapped", hpTurns() + "");
+    setProperty("_hccsHpTurnsUncapped", `${hpTurns()  }`);
     TEMP_TURNS = myTurncount();
     doTest(TEST_HP);
     HP_TURNS = myTurncount() - TEMP_TURNS;
@@ -1277,14 +1277,14 @@ function testMus() {
 
     if (musTurns() > targetTurns.get(TEST_MUS)) {
       throw (
-        "Can't achieve target turns for muscle test. Current: " +
-        musTurns() +
-        " Target: " +
-        targetTurns.get(TEST_MUS)
+        `Can't achieve target turns for muscle test. Current: ${
+        musTurns()
+        } Target: ${
+        targetTurns.get(TEST_MUS)}`
       );
     }
 
-    setProperty("_hccsMusTurnsUncapped", musTurns() + "");
+    setProperty("_hccsMusTurnsUncapped", `${musTurns()  }`);
     TEMP_TURNS = myTurncount();
     doTest(TEST_MUS);
     MUS_TURNS = myTurncount() - TEMP_TURNS;
@@ -1321,14 +1321,14 @@ function testMys() {
 
     if (mysTurns() > targetTurns.get(TEST_MYS)) {
       throw (
-        "Can't achieve target turns for mysticality test. Current: " +
-        mysTurns() +
-        " Target: " +
-        targetTurns.get(TEST_MYS)
+        `Can't achieve target turns for mysticality test. Current: ${
+        mysTurns()
+        } Target: ${
+        targetTurns.get(TEST_MYS)}`
       );
     }
 
-    setProperty("_hccsMysTurnsUncapped", mysTurns() + "");
+    setProperty("_hccsMysTurnsUncapped", `${mysTurns()  }`);
     TEMP_TURNS = myTurncount();
     doTest(TEST_MYS);
     MYS_TURNS = myTurncount() - TEMP_TURNS;
@@ -1355,21 +1355,21 @@ function testHotRes() {
       equip($item`Fourth of May Cosplay Saber`);
       equip($slot`offhand`, $item`industrial fire extinguisher`);
       //equip($item`vampyric cloake`);
-      adv1($location`LavaCo&trade; Lamp Factory`, -1, "");
+      adv1($location`LavaCo™ Lamp Factory`, -1, "");
       if (
         !containsText(
-          $location`LavaCo&trade; Lamp Factory`.noncombatQueue,
+          $location`LavaCo™ Lamp Factory`.noncombatQueue,
           "LavaCo&trade; Welcomes You"
         )
       ) {
         throw "Something went wrong at LavaCo.";
       }
       setProperty("choiceAdventure1387", "3");
-      mapMonster($location`LavaCo&trade; Lamp Factory`, $monster`Factory worker (female)`);
+      mapMonster($location`LavaCo™ Lamp Factory`, $monster`factory worker (female)`);
       withMacro(
-        Macro.trySkill($skill`become a cloud of mist`)
+        Macro.trySkill($skill`Become a Cloud of Mist`)
           .skill($skill`Fire Extinguisher: Foam Yourself`)
-          .skill($skill`meteor shower`)
+          .skill($skill`Meteor Shower`)
           .skill($skill`Use the Force`),
         runCombat
       );
@@ -1391,7 +1391,7 @@ function testHotRes() {
     ensureEffect($effect`Blood Bond`);
     ensureEffect($effect`Leash of Linguini`);
     ensureEffect($effect`Empathy`);
-    ensureEffect($effect`feeling peaceful`);
+    ensureEffect($effect`Feeling Peaceful`);
 
     // Pool buff. This will fall through to fam weight.
     ensureEffect($effect`Billiards Belligerence`);
@@ -1470,10 +1470,10 @@ function testHotRes() {
 
     if (hotResTurns() > targetTurns.get(TEST_HOT_RES)) {
       throw (
-        "Can't achieve target turns for hot res test. Current: " +
-        hotResTurns() +
-        " Target: " +
-        targetTurns.get(TEST_HOT_RES)
+        `Can't achieve target turns for hot res test. Current: ${
+        hotResTurns()
+        } Target: ${
+        targetTurns.get(TEST_HOT_RES)}`
       );
     }
 
@@ -1481,7 +1481,7 @@ function testHotRes() {
     // abort();
     //logprint(cliExecuteOutput("modtrace hot resistance"));
 
-    setProperty("_hccsHotResTurnsUncapped", hotResTurns() + "");
+    setProperty("_hccsHotResTurnsUncapped", `${hotResTurns()  }`);
     TEMP_TURNS = myTurncount();
     doTest(TEST_HOT_RES);
     HOT_RES_TURNS = myTurncount() - TEMP_TURNS;
@@ -1524,7 +1524,7 @@ function testNonCombat() {
     ensureEffect($effect`Billiards Belligerence`);
 
     equip($slot`acc3`, $item`Powerful Glove`);
-    
+
     //ensureEffect($effect`gummed shoes`);
     ensureEffect($effect`The Sonata of Sneakiness`);
     ensureEffect($effect`Smooth Movements`);
@@ -1535,10 +1535,10 @@ function testNonCombat() {
     // Rewards
     ensureEffect($effect`Throwing Some Shade`);
     // ensure_effect($effect[A Rose by Any Other Material]);
-    
+
     // wish for disquiet riot because shades are hilariously expensive
-    wishEffect($effect`disquiet riot`);
-    
+    wishEffect($effect`Disquiet Riot`);
+
     useFamiliar($familiar`Disgeist`);
 
     // Pastamancer d1 is -combat.
@@ -1560,14 +1560,14 @@ function testNonCombat() {
 
     if (nonCombatTurns() > targetTurns.get(TEST_NONCOMBAT)) {
       throw (
-        "Can't achieve target turns for -combat test. Current: " +
-        nonCombatTurns() +
-        " Target: " +
-        targetTurns.get(TEST_NONCOMBAT)
+        `Can't achieve target turns for -combat test. Current: ${
+        nonCombatTurns()
+        } Target: ${
+        targetTurns.get(TEST_NONCOMBAT)}`
       );
     }
 
-    setProperty("_hccsNonCombatTurnsUncapped", nonCombatTurns() + "");
+    setProperty("_hccsNonCombatTurnsUncapped", `${nonCombatTurns()  }`);
     TEMP_TURNS = myTurncount();
     doTest(TEST_NONCOMBAT);
     NONCOMBAT_TURNS = myTurncount() - TEMP_TURNS;
@@ -1665,7 +1665,7 @@ function testFamiliarWeight() {
     if (!have($item`sombrero-mounted sparkler`)) {
       buy(1, $item`sombrero-mounted sparkler`);
     }
-    ensureEffect($effect`You Can Really Taste the Dormous`);
+    ensureEffect($effect`You Can Really Taste the Dormouse`);
 
     //if (!getPropertyBoolean("_clanFortuneBuffUsed")) cliExecute("fortune buff familiar");
 
@@ -1682,7 +1682,7 @@ function testFamiliarWeight() {
     // while (myMp() / myMaxmp() > 0.3 && nextLibramCost() <= myMp()) {
     //   useSkill($skill`Summon Candy Heart`);
     // }
-  
+
     // if (availableAmount($item`green candy heart`) > 0) {
     //   ensureEffect($effect`Heart of Green`);
     // }
@@ -1700,14 +1700,14 @@ function testFamiliarWeight() {
 
     if (familiarTurns() > targetTurns.get(TEST_FAMILIAR)) {
       throw (
-        "Can't achieve target turns for familiar weight test. Current: " +
-        familiarTurns() +
-        " Target: " +
-        targetTurns.get(TEST_FAMILIAR)
+        `Can't achieve target turns for familiar weight test. Current: ${
+        familiarTurns()
+        } Target: ${
+        targetTurns.get(TEST_FAMILIAR)}`
       );
     }
 
-    setProperty("_hccsFamiliarTurnsUncapped", familiarTurns() + "");
+    setProperty("_hccsFamiliarTurnsUncapped", `${familiarTurns()  }`);
     TEMP_TURNS = myTurncount();
     doTest(TEST_FAMILIAR);
     FAMILIAR_TURNS = myTurncount() - TEMP_TURNS;
@@ -1762,13 +1762,13 @@ function testWeaponDamage() {
     if (
       !getPropertyBoolean("_chateauMonsterFought") &&
       availableAmount($item`corrupted marrow`) === 0 &&
-      haveEffect($effect`cowrruption`) === 0
+      haveEffect($effect`Cowrruption`) === 0
     ) {
       cliExecute("mood apathetic");
       equip($item`Fourth of May Cosplay Saber`);
       equip($item`familiar scrapbook`);
-      Macro.skill($skill`meteor shower`)
-        .skill($skill`use the force`)
+      Macro.skill($skill`Meteor Shower`)
+        .skill($skill`Use the Force`)
         .setAutoAttack();
       visitUrl("place.php?whichplace=chateau&action=chateau_painting", false);
       runCombat();
@@ -1832,7 +1832,7 @@ function testWeaponDamage() {
 
     ensureNpcEffect($effect`Engorged Weapon`, 1, $item`Meleegra™ pills`);
 
-    wishEffect($effect`Outer Wolf&trade;`);
+    wishEffect($effect`Outer Wolf™`);
     //wishEffect($effect`Wasabi With You`);
 
     ensureEffect($effect`Bow-Legged Swagger`);
@@ -1851,16 +1851,16 @@ function testWeaponDamage() {
       let modifier_2 = numericModifier("Weapon Damage Percent");
 
       $slots`hat,weapon,off-hand,back,shirt,pants,acc1,acc2,acc3,familiar`.forEach((s: Slot) => {
-        let it = equippedItem(s);
+        const it = equippedItem(s);
         if (toSlot(it) != $slot`weapon`) return;
-        let power = getPower(it);
-        let addition = toFloat(power) * 0.15;
+        const power = getPower(it);
+        const addition = toFloat(power) * 0.15;
 
         modifier_1 -= addition;
       });
       {
       }
-      if (haveEffect($effect`bow-legged swagger`) > 0) {
+      if (haveEffect($effect`Bow-Legged Swagger`) > 0) {
         modifier_1 *= 2;
         modifier_2 *= 2;
       }
@@ -1878,14 +1878,14 @@ function testWeaponDamage() {
 
     if (weaponTurns() > targetTurns.get(TEST_WEAPON)) {
       throw (
-        "Can't achieve target turns for weapon damage test. Current: " +
-        weaponTurns() +
-        " Target: " +
-        targetTurns.get(TEST_WEAPON)
+        `Can't achieve target turns for weapon damage test. Current: ${
+        weaponTurns()
+        } Target: ${
+        targetTurns.get(TEST_WEAPON)}`
       );
     }
 
-    setProperty("_hccsWeaponTurnsUncapped", weaponTurns() + "");
+    setProperty("_hccsWeaponTurnsUncapped", `${weaponTurns()  }`);
     TEMP_TURNS = myTurncount();
     doTest(TEST_WEAPON);
     WEAPON_TURNS = myTurncount() - TEMP_TURNS;
@@ -1941,7 +1941,7 @@ function testSpellDamage() {
     //   print("Something went wrong with getting inner elf");
     // }
 
-    if (myClass() === $class`sauceror` && !getPropertyBoolean("_barrelPrayer")) {
+    if (myClass() === $class`Sauceror` && !getPropertyBoolean("_barrelPrayer")) {
       cliExecute("barrelprayer buff");
     }
 
@@ -2009,14 +2009,14 @@ function testSpellDamage() {
 
     if (spellTurns() > targetTurns.get(TEST_SPELL)) {
       throw (
-        "Can't achieve target turns for spell damage test. Current: " +
-        spellTurns() +
-        " Target: " +
-        targetTurns.get(TEST_SPELL)
+        `Can't achieve target turns for spell damage test. Current: ${
+        spellTurns()
+        } Target: ${
+        targetTurns.get(TEST_SPELL)}`
       );
     }
 
-    setProperty("_hccsSpellTurnsUncapped", spellTurns() + "");
+    setProperty("_hccsSpellTurnsUncapped", `${spellTurns()  }`);
     TEMP_TURNS = myTurncount();
     doTest(TEST_SPELL);
     SPELL_TURNS = myTurncount() - TEMP_TURNS;
@@ -2047,7 +2047,7 @@ function testItemDrop() {
     //getting a lil ninja costume for the tot
     if (availableAmount($item`li'l ninja costume`) === 0 && get("_shatteringPunchUsed") < 3) {
       Macro.skill($skill`Shattering Punch`).setAutoAttack();
-      mapMonster($location`The Haiku Dungeon`, $monster`Amateur ninja`);
+      mapMonster($location`The Haiku Dungeon`, $monster`amateur ninja`);
       setLocation($location`none`);
       setAutoAttack(0);
     }
@@ -2115,7 +2115,7 @@ function testItemDrop() {
     //synthesisPlanner.synthesize($effect`Synthesis: Collection`);
 
     // see what class we are, maybe a couple other buffs
-    if (myClass() === $class`pastamancer`) {
+    if (myClass() === $class`Pastamancer`) {
       cliExecute("barrelprayer buff");
     } else if (myClass() === $class`Sauceror`) {
       //uncomment if i buy birds
@@ -2152,14 +2152,14 @@ function testItemDrop() {
 
     if (itemdrop() > targetTurns.get(TEST_ITEM)) {
       throw (
-        "Can't achieve target turns for item drop test. Current: " +
-        itemdrop() +
-        " Target: " +
-        targetTurns.get(TEST_ITEM)
+        `Can't achieve target turns for item drop test. Current: ${
+        itemdrop()
+        } Target: ${
+        targetTurns.get(TEST_ITEM)}`
       );
     }
 
-    setProperty("_hccsItemTurnsUncapped", itemdrop() + "");
+    setProperty("_hccsItemTurnsUncapped", `${itemdrop()  }`);
     TEMP_TURNS = myTurncount();
     doTest(TEST_ITEM);
     ITEM_TURNS = myTurncount() - TEMP_TURNS;
@@ -2189,9 +2189,9 @@ export function main(argString = "") {
     if (is100Run) {
       familiarFor100Run = toFamiliar(getProperty("_hccsFamiliar"));
       if (familiarFor100Run == $familiar`none`) {
-        if (userConfirm("Is " + myFamiliar() + " the familiar you want?")) {
+        if (userConfirm(`Is ${  myFamiliar()  } the familiar you want?`)) {
           familiarFor100Run = myFamiliar();
-          setProperty("_hccsFamiliar", familiarFor100Run + "");
+          setProperty("_hccsFamiliar", `${familiarFor100Run  }`);
         } else {
           abort("Pick the correct familiar");
         }
@@ -2292,46 +2292,46 @@ export function main(argString = "") {
     setProperty("hpAutoRecovery", "0.8");
 
     print(
-      "This loop took " +
-        floor((END_TIME - START_TIME) / 1000 / 60) +
-        " minutes and " +
-        ceil(((END_TIME - START_TIME) / 1000) % 60) +
-        " seconds, for a 1 day, " +
-        myTurncount() +
-        " turn HCCS run. Organ use was " +
-        myFullness() +
-        "/" +
-        myInebriety() +
-        "/" +
-        mySpleenUse() +
-        ". I drank " +
-        (6 - availableAmount($item`astral pilsner`)) +
-        " Astral Pilsners.",
+      `This loop took ${
+        floor((END_TIME - START_TIME) / 1000 / 60)
+        } minutes and ${
+        ceil(((END_TIME - START_TIME) / 1000) % 60)
+        } seconds, for a 1 day, ${
+        myTurncount()
+        } turn HCCS run. Organ use was ${
+        myFullness()
+        }/${
+        myInebriety()
+        }/${
+        mySpleenUse()
+        }. I drank ${
+        6 - availableAmount($item`astral pilsner`)
+        } Astral Pilsners.`,
       "green"
     );
 
-    print("HP test: " + getProperty("_hccsHpTurns"), "green");
-    print("Muscle test: " + getProperty("_hccsMusTurns"), "green");
-    print("Myst test: " + getProperty("_hccsMysTurns"), "green");
-    print("Moxie test: " + getProperty("_hccsMoxTurns"), "green");
-    print("Hot Res test: " + getProperty("_hccsHotResTurns"), "green");
-    print("Noncombat test: " + getProperty("_hccsNonCombatTurns"), "green");
-    print("Fam Weight test: " + getProperty("_hccsFamiliarTurns"), "green");
-    print("Weapon Damage test: " + getProperty("_hccsWeaponTurns"), "green");
-    print("Spell Damage Test: " + getProperty("_hccsSpellTurns"), "green");
-    print("Item Drop test: " + getProperty("_hccsItemTurns"), "green");
+    print(`HP test: ${  getProperty("_hccsHpTurns")}`, "green");
+    print(`Muscle test: ${  getProperty("_hccsMusTurns")}`, "green");
+    print(`Myst test: ${  getProperty("_hccsMysTurns")}`, "green");
+    print(`Moxie test: ${  getProperty("_hccsMoxTurns")}`, "green");
+    print(`Hot Res test: ${  getProperty("_hccsHotResTurns")}`, "green");
+    print(`Noncombat test: ${  getProperty("_hccsNonCombatTurns")}`, "green");
+    print(`Fam Weight test: ${  getProperty("_hccsFamiliarTurns")}`, "green");
+    print(`Weapon Damage test: ${  getProperty("_hccsWeaponTurns")}`, "green");
+    print(`Spell Damage Test: ${  getProperty("_hccsSpellTurns")}`, "green");
+    print(`Item Drop test: ${  getProperty("_hccsItemTurns")}`, "green");
 
     print("--------Uncapped turns--------", "green");
-    print("HP test: " + getProperty("_hccsHpTurnsUncapped"), "green");
-    print("Muscle test: " + getProperty("_hccsMusTurnsUncapped"), "green");
-    print("Myst test: " + getProperty("_hccsMysTurnsUncapped"), "green");
-    print("Moxie test: " + getProperty("_hccsMoxTurnsUncapped"), "green");
-    print("Hot Res test: " + getProperty("_hccsHotResTurnsUncapped"), "green");
-    print("Noncombat test: " + getProperty("_hccsNonCombatTurnsUncapped"), "green");
-    print("Fam Weight test: " + getProperty("_hccsFamiliarTurnsUncapped"), "green");
-    print("Weapon Damage test: " + getProperty("_hccsWeaponTurnsUncapped"), "green");
-    print("Spell Damage Test: " + getProperty("_hccsSpellTurnsUncapped"), "green");
-    print("Item Drop test: " + getProperty("_hccsItemTurnsUncapped"), "green");
+    print(`HP test: ${  getProperty("_hccsHpTurnsUncapped")}`, "green");
+    print(`Muscle test: ${  getProperty("_hccsMusTurnsUncapped")}`, "green");
+    print(`Myst test: ${  getProperty("_hccsMysTurnsUncapped")}`, "green");
+    print(`Moxie test: ${  getProperty("_hccsMoxTurnsUncapped")}`, "green");
+    print(`Hot Res test: ${  getProperty("_hccsHotResTurnsUncapped")}`, "green");
+    print(`Noncombat test: ${  getProperty("_hccsNonCombatTurnsUncapped")}`, "green");
+    print(`Fam Weight test: ${  getProperty("_hccsFamiliarTurnsUncapped")}`, "green");
+    print(`Weapon Damage test: ${  getProperty("_hccsWeaponTurnsUncapped")}`, "green");
+    print(`Spell Damage Test: ${  getProperty("_hccsSpellTurnsUncapped")}`, "green");
+    print(`Item Drop test: ${  getProperty("_hccsItemTurnsUncapped")}`, "green");
 
     if (get("_questPartyFairQuest") === "food") {
       print("Hey, go talk to Geraldine!", "blue");

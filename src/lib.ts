@@ -153,7 +153,7 @@ export function ensurePotionEffect(ef: Effect, potion: Item) {
 export function ensureEffect(ef: Effect, turns = 1) {
   if (haveEffect(ef) < turns) {
     if (!cliExecute(ef.default) || haveEffect(ef) === 0) {
-      throw 'Failed to get effect ' + ef.name + '.';
+      throw `Failed to get effect ${  ef.name  }.`;
     }
   } else {
     print(`Already have effect ${ef.name}.`);
