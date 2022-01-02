@@ -1,27 +1,36 @@
-import { getWorkshed, myGardenType, visitUrl, containsText, print, userConfirm } from "kolmafia";
-import { $item } from "libram";
+import { equippedItem, print, wait } from "kolmafia";
+import { $class, $item, $slot, ascend, Lifestyle, Paths, prepareAscension } from "libram";
 
-// if (getWorkshed() !== $item`little geneticist DNA-splicing lab`) {
-//   throw "You have the wrong workshed item";
+// if (equippedItem($slot`bootskin`) !== $item`frontwinder skin`) {
+//   throw "Your cowboy boots have the wrong skin";
 // }
-// if (myGardenType() != "peppermint") {
-//   throw "You have the wrong garden";
+
+// if (equippedItem($slot`bootspur`) !== $item`thicksilver spurs`) {
+//   throw "Your cowboy boots have the wrong spurs";
 // }
+
 print("you're about to ascend! wait, is that good?", "green");
 
-// add in checks for chateau and boots, chateau mob has a pref, dunno about the rest
+wait(15);
 
-const pg = visitUrl("charpane.php");
+prepareAscension(
+  {
+    //workshed: $item`Little Geneticist DNA-Splicing Lab`,
+    //garden: $item`Peppermint Pip Packet`,
+    eudora: $item`Our Daily Candles™ order form`,
+  },
+  {
+    desk: $item`Swiss piggy bank`,
+    nightstand: $item`foreign language tapes`,
+    ceiling: $item`ceiling fan`,
+  }
+);
 
-if (!containsText(visitUrl("charpane.php"), "Astral Spirit"))
-  visitUrl("ascend.php?action=ascend&confirm=on&confirm2=on");
-if (!containsText(visitUrl("charpane.php"), "Astral Spirit")) throw "Failed to ascend.";
-visitUrl("afterlife.php?action=pearlygates");
-visitUrl("afterlife.php?action=buydeli&whichitem=5046"); //astral pilsners
-visitUrl("afterlife.php?action=buyarmory&whichitem=5040"); //astral pet sweater
-//userConfirm("Are you sure you want to ascend? No skills to perm?");
-visitUrl(
-  //"afterlife.php?action=ascend&confirmascend=1&whichsign=2&gender=1&whichclass=4&whichpath=25&asctype=3&nopetok=1&noskillsok=1&pwd",
-  "afterlife.php?action=ascend&confirmascend=1&whichsign=8&gender=1&whichclass=4&whichpath=25&asctype=3&pwd&noskillsok=1",
-  true
+ascend(
+  Paths.CommunityService,
+  $class`Sauceror`,
+  Lifestyle.hardcore,
+  "blender",
+  $item`astral six-pack`,
+  $item`astral statuette`
 );

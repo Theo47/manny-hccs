@@ -1,40 +1,49 @@
 import {
-  getProperty,
-  toInt,
-  setProperty,
-  familiarWeight,
-  myFamiliar,
-  weightAdjustment,
+  abort,
+  adv1,
+  autosell,
   availableAmount,
   buy,
-  use,
-  retrieveItem,
-  haveEffect,
-  cliExecute,
-  print,
-  myMp,
-  myMaxmp,
-  eat,
-  totalTurnsPlayed,
-  getClanName,
-  visitUrl,
-  getFuel,
-  create,
-  haveSkill,
-  useSkill,
-  toUrl,
   buyUsingStorage,
+  chatPrivate,
+  choiceFollowsFight,
+  cliExecute,
+  create,
+  eat,
   equip,
+  familiarWeight,
+  getClanName,
+  getFuel,
+  getProperty,
+  haveEffect,
+  haveSkill,
+  inMultiFight,
+  itemAmount,
+  myAdventures,
+  myFamiliar,
+  myLocation,
+  myMaxmp,
+  myMp,
+  print,
   pullsRemaining,
+  putShop,
+  retrieveItem,
+  setProperty,
   shopAmount,
   storageAmount,
   takeShop,
-  toString as toStringAsh,
   toEffect,
-  toString,
-  myLocation,
+  toInt,
+  toString as toStringAsh,
+  totalTurnsPlayed,
+  toUrl,
+  use,
+  useSkill,
+  visitUrl,
+  wait,
+  weightAdjustment,
 } from "kolmafia";
-import { $effect, $effects, $item, $location, $skill, Macro } from "libram";
+import { $effect, $effects, $item, $location, $skill, get, Macro, property } from "libram";
 
 export function getPropertyInt(name: string) {
   const str = getProperty(name);
@@ -62,6 +71,12 @@ export function getPropertyBoolean(name: string) {
 
 export function setChoice(adv: number, choice: number) {
   setProperty(`choiceAdventure${adv}`, `${choice}`);
+}
+
+export function multiFightAutoAttack(): void {
+  while (choiceFollowsFight() || inMultiFight()) {
+    visitUrl("choice.php");
+  }
 }
 
 export function myFamiliarWeight() {
@@ -247,7 +262,7 @@ export function mapMonster(location: Location, monster: Monster) {
   const fightPage = visitUrl(
     `choice.php?pwd&whichchoice=1435&option=1&heyscriptswhatsupwinkwink=${monster.id}`
   );
-  if (!fightPage.includes("You're fighting") && myLocation() !== $location`the haiku dungeon`)
+  if (!fightPage.includes("You're fighting") && myLocation() !== $location`The Haiku Dungeon`)
     throw "Something went wrong starting the fight.";
 }
 
@@ -311,7 +326,7 @@ const songSlots = [
 const allKnownSongs = ([] as Effect[]).concat(...songSlots);
 const allSongs = Skill.all()
   .filter(
-    (skill) => toStringAsh((skill.class as unknown) as string) === "Accordion Thief" && skill.buff
+    (skill) => toStringAsh(skill.class as unknown as string) === "Accordion Thief" && skill.buff
   )
   .map((skill) => toEffect(skill));
 export function openSongSlot(song: Effect) {
@@ -357,4 +372,73 @@ export function kill() {
     .trySkill($skill`Saucestorm`)
     .trySkillRepeat($skill`Saucegeyser`)
     .attack();
+}
+
+function checkFax(monster: Monster): boolean {
+  cliExecute("fax receive");
+  if (property.getString("photocopyMonster").toLowerCase() === monster.name.toLowerCase())
+    return true;
+  cliExecute("fax send");
+  return false;
+}
+
+export function fax(monster: Monster): void {
+  if (!get("_photocopyUsed")) {
+    if (checkFax(monster)) return;
+    chatPrivate("cheesefax", monster.name);
+    for (let i = 0; i < 3; i++) {
+      wait(5 + i);
+      if (checkFax(monster)) return;
+    }
+    abort(`Failed to acquire photocopied ${monster.name}.`);
+  }
+}
+
+export function mannyCleanup(): void {
+  while (get("_sourceTerminalEnhanceUses") < 3) {
+    cliExecute("terminal enhance meat.enh");
+  }
+
+  if (get("_claraBellUsed") === false && myAdventures() > 0) {
+    use($item`Clara's bell`);
+    setChoice(919, 1);
+    do {
+      adv1($location`Sloppy Seconds Diner`, -1, "");
+    } while (get("lastEncounter") === "Nothing Could Be Finer");
+  }
+
+  if (get("boomBoxSong") !== "Food Vibrations") {
+    cliExecute("boombox food");
+  }
+
+  if (get("_freeBeachWalksUsed") < 11) {
+    cliExecute("combbeach free");
+  }
+
+  autosell($item`cheap sunglasses`, itemAmount($item`cheap sunglasses`) - 1);
+  autosell($item`filthy child leash`, itemAmount($item`filthy child leash`));
+  use(itemAmount($item`bag of park garbage`) - 30, $item`bag of park garbage`);
+  use(itemAmount($item`Gathered Meat-Clip`), $item`Gathered Meat-Clip`);
+  use(itemAmount($item`old coin purse`), $item`old coin purse`);
+  use(itemAmount($item`old leather wallet`), $item`old leather wallet`);
+  autosell($item`expensive camera`, itemAmount($item`expensive camera`));
+  autosell($item`bag of gross foreign snacks`, itemAmount($item`bag of gross foreign snacks`));
+  putShop(300, 0, itemAmount($item`gold nuggets`), $item`gold nuggets`);
+  putShop(0, 0, itemAmount($item`cornucopia`), $item`cornucopia`);
+  putShop(0, 0, itemAmount($item`elemental sugarcube`), $item`elemental sugarcube`);
+  putShop(0, 0, itemAmount($item`gingerbread cigarette`), $item`gingerbread cigarette`);
+  putShop(0, 0, itemAmount($item`abandoned candy`), $item`abandoned candy`);
+  autosell($item`meat stack`, itemAmount($item`meat stack`));
+
+  // check for a dggt if we haven't
+  if (get("_defectiveTokenChecked") === false) {
+    retrieveItem($item`Game Grid token`);
+    visitUrl("place.php?whichplace=arcade&action=arcade_plumber");
+  }
+}
+
+// shamelessly stolen from phccs
+export function horse(horse: string): void {
+  if (!horse.includes("horse")) horse = `${horse} horse`;
+  if (get("_horsery") !== horse) cliExecute(`horsery ${horse}`);
 }

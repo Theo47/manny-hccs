@@ -1,5 +1,11 @@
 {
-  "extends": ["eslint:recommended"],
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module"
+  },
+  "plugins": ["@typescript-eslint", "libram"],
   "rules": {
     "block-scoped-var": "error",
     "eqeqeq": "error",
@@ -16,10 +22,9 @@
         "ignoreDeclarationSort": true
       }
     ],
-    "node/no-unpublished-import": "off"
-  },
-  "parserOptions": {
-    "ecmaVersion": 2020,
-    "sourceType": "module"
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": "error",
+    "libram/verify-constants": "error",
+    "@typescript-eslint/explicit-module-boundary-types": "off"
   }
 }

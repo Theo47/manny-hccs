@@ -1,20 +1,22 @@
-var path = require("path");
-var webpack = require("webpack");
-var packageData = require("./package.json");
+// eslint-disable-next-line
+const path = require("path");
 
+// eslint-disable-next-line no-undef
 module.exports = {
   entry: {
     // Point "entry" to scripts you want to be CLI-eligible.
     hccs: "./src/hccs.ts",
     hccsAscend: "./src/hccsAscend.ts",
-    hccsLibrams: "./src/hccsLibrams.ts",
+    // hccsLibrams: "./src/hccsLibrams.ts",
+    hccsPre: "./src/hccsPre.ts",
     // macroConsult: "./src/macroConsult.ts",
   },
-  mode: "development",
+  mode: "production",
   devtool: false,
   output: {
     // Change the final string here to the name you want your script to use in mafia.
-    path: path.resolve(__dirname, "KoLmafia", "scripts", packageData.name),
+    // eslint-disable-next-line no-undef
+    path: path.resolve(__dirname, "KoLmafia", "scripts", "theo-hccs"),
     filename: "[name].js",
     libraryTarget: "commonjs",
   },
@@ -30,6 +32,14 @@ module.exports = {
         loader: "babel-loader",
       },
     ],
+  },
+  optimization: {
+    // Disable compression because it makes debugging more difficult for KolMafia
+    minimize: false,
+  },
+  performance: {
+    // Disable the warning about assets exceeding the recommended size because this isn't a website script
+    hints: false,
   },
   plugins: [],
   externals: {
