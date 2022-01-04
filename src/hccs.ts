@@ -122,7 +122,6 @@ import {
   Witchess,
 } from "libram";
 import { error } from "libram/dist/console";
-import { familiar } from "libram/dist/resources/ObtuseAngel";
 import { SynthesisPlanner } from "./synthesis";
 import {
   getEffect,
@@ -286,7 +285,7 @@ function fightSausageIfGuaranteed() {
     //equip($item`old sweatpants`);
     //equip($slot`acc1`, $item`Eight Days a Week Pill Keeper`);
     equip($slot`acc2`, $item`Powerful Glove`);
-    equip($slot`acc3`, $item`Lil\' Doctor&trade; Bag`);
+    equip($slot`acc3`, $item`Lil' Doctor™ bag`);
 
     useDefaultFamiliar();
 
@@ -417,7 +416,7 @@ function testCoilWire() {
     //TODO: i don't have borrowed time so need to eat/drink here to get to 60 adventures
     // ensureCreateItem(1, $item`borrowed time`);
     // use(1, $item`borrowed time`);
-    if (myFullness() == 0) {
+    if (myFullness() === 0) {
       buy($item`pickled egg`, 2);
       eat(2, $item`This Charming Flan`);
     }
@@ -427,6 +426,83 @@ function testCoilWire() {
   }
 
   if (myTurncount() < 60) abort("Something went wrong coiling wire.");
+}
+
+function moxTurns() {
+  if (myClass() === $class`Pastamancer`) {
+    return 60 - floor((myBuffedstat($stat`moxie`) - myBasestat($stat`mysticality`)) / 30);
+  } else {
+    return 60 - floor((myBuffedstat($stat`moxie`) - myBasestat($stat`moxie`)) / 30);
+  }
+}
+
+function hpTurns() {
+  return 60 - floor((myMaxhp() - myBuffedstat($stat`muscle`) - 3) / 30);
+}
+
+function musTurns() {
+  if (myClass() === $class`Pastamancer`) {
+    return 60 - floor((myBuffedstat($stat`muscle`) - myBasestat($stat`mysticality`)) / 30);
+  } else {
+    return 60 - floor((myBuffedstat($stat`muscle`) - myBasestat($stat`muscle`)) / 30);
+  }
+}
+
+function mysTurns() {
+  return 60 - floor((myBuffedstat($stat`mysticality`) - myBasestat($stat`mysticality`)) / 30);
+}
+
+function hotResTurns() {
+  return 60 - round(numericModifier("hot resistance"));
+}
+
+function nonCombatTurns() {
+  //let's assume i will always have at least -25% combat rate to simplify calculation
+  return 45 + (round(numericModifier("combat rate")) + 25) * 3;
+}
+
+function familiarTurns() {
+  return (
+    60 -
+    floor((familiarWeight(myFamiliar()) + round(numericModifier("familiar weight"))) / 5 + 0.001)
+  );
+}
+
+function weaponTurns() {
+  //code shamelessly copied from TourGuide
+  let modifier_1 = numericModifier("Weapon Damage");
+  let modifier_2 = numericModifier("Weapon Damage Percent");
+
+  $slots`hat,weapon,off-hand,back,shirt,pants,acc1,acc2,acc3,familiar`.forEach((s: Slot) => {
+    const it = equippedItem(s);
+    if (toSlot(it) !== $slot`weapon`) return;
+    const power = getPower(it);
+    const addition = toFloat(power) * 0.15;
+
+    modifier_1 -= addition;
+  });
+
+  if (haveEffect($effect`Bow-Legged Swagger`) > 0) {
+    modifier_1 *= 2;
+    modifier_2 *= 2;
+  }
+  return 60 - (floor(modifier_1 / 50 + 0.001) + floor(modifier_2 / 50 + 0.001));
+}
+
+function spellTurns() {
+  return (
+    60 -
+    floor(numericModifier("spell damage") / 50 + 0.001) -
+    floor(numericModifier("spell damage percent") / 50 + 0.001)
+  );
+}
+
+function itemdrop() {
+  return (
+    60 -
+    floor(numericModifier("Item Drop") / 30 + 0.001) -
+    floor(numericModifier("Booze Drop") / 15 + 0.001)
+  );
 }
 
 function levelUp() {
@@ -725,7 +801,7 @@ function levelUp() {
     // }
 
     ensureEffect($effect`Song of Bravado`);
-    ensureSong($effect`Stevedave\'s Shanty of Superiority`);
+    ensureSong($effect`Stevedave's Shanty of Superiority`);
 
     if (getProperty("boomBoxSong") !== "Total Eclipse of Your Meat") {
       cliExecute("boombox meat");
@@ -1014,7 +1090,7 @@ function levelUp() {
     //autosell(5, $item`blue pixel`);
     //autosell(5, $item`white pixel`);
 
-    if (haveEffect($effect`Carlweather\'s Cantata of Confrontation`) > 0) {
+    if (haveEffect($effect`Carlweather's Cantata of Confrontation`) > 0) {
       cliExecute("shrug Carlweather's Cantata of Confrontation");
     }
 
@@ -1046,7 +1122,7 @@ function levelUp() {
 
     useDefaultFamiliar();
 
-    equip($slot`acc3`, $item`Lil\' Doctor&trade; Bag`);
+    equip($slot`acc3`, $item`Lil' Doctor™ bag`);
 
     // 14 free NEP fights, using mob hit and xray
     while (
@@ -1150,14 +1226,6 @@ function testMox() {
     useFamiliar($familiar`Left-Hand Man`);
     maximize("moxie", false);
 
-    function moxTurns() {
-      if (myClass() === $class`Pastamancer`) {
-        return 60 - floor((myBuffedstat($stat`moxie`) - myBasestat($stat`mysticality`)) / 30);
-      } else {
-        return 60 - floor((myBuffedstat($stat`moxie`) - myBasestat($stat`moxie`)) / 30);
-      }
-    }
-
     if (moxTurns() > targetTurns.get(TEST_MOX)) {
       throw (
         `Can't achieve target turns for moxie test. Current: ${
@@ -1187,7 +1255,7 @@ function testHP() {
     // ensure_effect($effect[Tomato Power]);
     ensureEffect($effect`Song of Starch`);
     ensureEffect($effect`Big`);
-    ensureSong($effect`Stevedave\'s Shanty of Superiority`);
+    ensureSong($effect`Stevedave's Shanty of Superiority`);
     ensureSong($effect`Power Ballad of the Arrowsmith`);
     ensureEffect($effect`Rage of the Reindeer`);
     ensureEffect($effect`Quiet Determination`);
@@ -1205,10 +1273,6 @@ function testHP() {
     if (myMaxhp() - myBuffedstat($stat`muscle`) - 3 < 1770) {
       error("Not enough HP to cap.");
       abort();
-    }
-
-    function hpTurns() {
-      return 60 - floor((myMaxhp() - myBuffedstat($stat`muscle`) - 3) / 30);
     }
 
     if (hpTurns() > targetTurns.get(TEST_HP)) {
@@ -1267,14 +1331,6 @@ function testMus() {
     useFamiliar($familiar`Left-Hand Man`);
     maximize("muscle", false);
 
-    function musTurns() {
-      if (myClass() === $class`Pastamancer`) {
-        return 60 - floor((myBuffedstat($stat`muscle`) - myBasestat($stat`mysticality`)) / 30);
-      } else {
-        return 60 - floor((myBuffedstat($stat`muscle`) - myBasestat($stat`muscle`)) / 30);
-      }
-    }
-
     if (musTurns() > targetTurns.get(TEST_MUS)) {
       throw (
         `Can't achieve target turns for muscle test. Current: ${
@@ -1313,10 +1369,6 @@ function testMys() {
     if (myBuffedstat($stat`mysticality`) - myBasestat($stat`mysticality`) < 1770) {
       error("Not enough mysticality to cap.");
       abort();
-    }
-
-    function mysTurns() {
-      return 60 - floor((myBuffedstat($stat`mysticality`) - myBasestat($stat`mysticality`)) / 30);
     }
 
     if (mysTurns() > targetTurns.get(TEST_MYS)) {
@@ -1464,10 +1516,6 @@ function testHotRes() {
     // Mafia sometimes can't figure out that multiple +weight things would get us to next tier.
     maximize("hot res, 0.01 familiar weight", false);
 
-    function hotResTurns() {
-      return 60 - round(numericModifier("hot resistance"));
-    }
-
     if (hotResTurns() > targetTurns.get(TEST_HOT_RES)) {
       throw (
         `Can't achieve target turns for hot res test. Current: ${
@@ -1552,11 +1600,6 @@ function testNonCombat() {
     }
 
     maximize("-combat, 0.01 familiar weight", false);
-
-    function nonCombatTurns() {
-      //let's assume i will always have at least -25% combat rate to simplify calculation
-      return 45 + (round(numericModifier("combat rate")) + 25) * 3;
-    }
 
     if (nonCombatTurns() > targetTurns.get(TEST_NONCOMBAT)) {
       throw (
@@ -1688,15 +1731,6 @@ function testFamiliarWeight() {
     // }
 
     maximize("familiar weight", false);
-
-    function familiarTurns() {
-      return (
-        60 -
-        floor(
-          (familiarWeight(myFamiliar()) + round(numericModifier("familiar weight"))) / 5 + 0.001
-        )
-      );
-    }
 
     if (familiarTurns() > targetTurns.get(TEST_FAMILIAR)) {
       throw (
@@ -1845,33 +1879,11 @@ function testWeaponDamage() {
     useFamiliar($familiar`Left-Hand Man`);
     maximize("weapon damage", false);
 
-    function weaponTurns() {
-      //code shamelessly copied from TourGuide
-      let modifier_1 = numericModifier("Weapon Damage");
-      let modifier_2 = numericModifier("Weapon Damage Percent");
-
-      $slots`hat,weapon,off-hand,back,shirt,pants,acc1,acc2,acc3,familiar`.forEach((s: Slot) => {
-        const it = equippedItem(s);
-        if (toSlot(it) != $slot`weapon`) return;
-        const power = getPower(it);
-        const addition = toFloat(power) * 0.15;
-
-        modifier_1 -= addition;
-      });
-      {
-      }
-      if (haveEffect($effect`Bow-Legged Swagger`) > 0) {
-        modifier_1 *= 2;
-        modifier_2 *= 2;
-      }
-      return 60 - (floor(modifier_1 / 50 + 0.001) + floor(modifier_2 / 50 + 0.001));
-    }
-
     if (weaponTurns() > 5) {
       // Rictus of Yeg = 200% Weapon damage
       //if weapon turns are less than 5, we want to use it on spell damage instead for -4 turns there
       if (!getPropertyBoolean("_cargoPocketEmptied") && haveEffect($effect`Rictus of Yeg`) === 0) {
-        if (availableAmount($item`Yeg\'s Motel toothbrush`) === 0) cliExecute("cargo 284");
+        if (availableAmount($item`Yeg's Motel toothbrush`) === 0) cliExecute("cargo 284");
         ensureEffect($effect`Rictus of Yeg`);
       }
     }
@@ -1995,14 +2007,6 @@ function testSpellDamage() {
       ensurePotionEffect($effect`Baconstoned`, $item`vial of baconstone juice`);
     }
 
-    function spellTurns() {
-      return (
-        60 -
-        floor(numericModifier("spell damage") / 50 + 0.001) -
-        floor(numericModifier("spell damage percent") / 50 + 0.001)
-      );
-    }
-
     while (spellTurns() > myAdventures()) {
       eat(1, $item`magical sausage`);
     }
@@ -2099,16 +2103,16 @@ function testItemDrop() {
     // }
 
     if (!getPropertyBoolean("_clanFortuneBuffUsed")) {
-      ensureEffect($effect`There\'s No N In Love`);
+      ensureEffect($effect`There's No N in Love`);
     }
 
-    ensureEffect($effect`Fat Leon\'s Phat Loot Lyric`);
-    ensureEffect($effect`Singer\'s Faithful Ocelot`);
+    ensureEffect($effect`Fat Leon's Phat Loot Lyric`);
+    ensureEffect($effect`Singer's Faithful Ocelot`);
     ensureEffect($effect`The Spirit of Taking`);
     ensureEffect($effect`items.enh`);
 
     //candle correspondence
-    if (have($item`Salsa Caliente candle`)) {
+    if (have($item`Salsa Caliente™ candle`)) {
       ensureEffect($effect`El Aroma de Salsa`);
     }
 
@@ -2142,14 +2146,6 @@ function testItemDrop() {
       false
     );
 
-    function itemdrop() {
-      return (
-        60 -
-        floor(numericModifier("Item Drop") / 30 + 0.001) -
-        floor(numericModifier("Booze Drop") / 15 + 0.001)
-      );
-    }
-
     if (itemdrop() > targetTurns.get(TEST_ITEM)) {
       throw (
         `Can't achieve target turns for item drop test. Current: ${
@@ -2170,7 +2166,7 @@ function testItemDrop() {
   }
 }
 
-export function main(argString = "") {
+export function main() {
 
   if (myPathId() !== 25) abort("Current path is not community service");
 
@@ -2188,7 +2184,7 @@ export function main(argString = "") {
   try {
     if (is100Run) {
       familiarFor100Run = toFamiliar(getProperty("_hccsFamiliar"));
-      if (familiarFor100Run == $familiar`none`) {
+      if (familiarFor100Run === $familiar`none`) {
         if (userConfirm(`Is ${  myFamiliar()  } the familiar you want?`)) {
           familiarFor100Run = myFamiliar();
           setProperty("_hccsFamiliar", `${familiarFor100Run  }`);

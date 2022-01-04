@@ -8,7 +8,6 @@
     "build": "yarn run build:types && yarn run build:js",
     "build:types": "tsc",
     "build:js": "webpack",
-    "webpack": "webpack",
     "lint": "eslint src && prettier --check .",
     "watch": "webpack --watch --progress"
   },
