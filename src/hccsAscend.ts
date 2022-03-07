@@ -17,12 +17,13 @@ prepareAscension(
   {
     //workshed: $item`Little Geneticist DNA-Splicing Lab`,
     //garden: $item`Peppermint Pip Packet`,
-    eudora: $item`Our Daily Candles™ order form`,
-  },
-  {
-    desk: $item`Swiss piggy bank`,
-    nightstand: $item`foreign language tapes`,
-    ceiling: $item`ceiling fan`,
+    eudora: `Our Daily Candles™ order form`,
+    chateau: {
+      desk: `Swiss piggy bank`,
+      nightstand: `foreign language tapes`,
+      ceiling: `ceiling fan`,
+    },
+    throwOnFail: false,
   }
 );
 

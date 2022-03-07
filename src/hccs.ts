@@ -9,10 +9,8 @@ import {
   ensurePotionEffect,
   ensureSewerItem,
   ensureSong,
-  fax,
   getPropertyBoolean,
   getPropertyInt,
-  horse,
   kill,
   mapMonster,
   multiFightAutoAttack,
@@ -27,21 +25,19 @@ import {
   availableAmount,
   buy,
   ceil,
-  chatPrivate,
   cliExecute,
-  cliExecuteOutput,
   closetAmount,
   containsText,
   create,
   drink,
   eat,
+  Effect,
   equip,
   equippedItem,
+  Familiar,
   familiarWeight,
   floor,
   gametimeToInt,
-  getCampground,
-  getInventory,
   getPower,
   getProperty,
   getWorkshed,
@@ -49,8 +45,8 @@ import {
   haveEffect,
   haveEquipped,
   haveSkill,
-  hippyStoneBroken,
   inebrietyLimit,
+  Item,
   itemAmount,
   lastChoice,
   maximize,
@@ -61,20 +57,18 @@ import {
   myClass,
   myFamiliar,
   myFullness,
-  myGardenType,
   myHp,
   myInebriety,
   myLevel,
   myMaxhp,
-  myMaxmp,
   myMp,
   myPathId,
   mySpleenUse,
   myTurncount,
   numericModifier,
+  Phylum,
   print,
   putCloset,
-  restoreMp,
   retrieveItem,
   round,
   runChoice,
@@ -82,43 +76,38 @@ import {
   setAutoAttack,
   setLocation,
   setProperty,
-  sweetSynthesis,
-  sweetSynthesisResult,
+  Skill,
+  Slot,
   takeCloset,
   toFamiliar,
   toFloat,
   toInt,
   toSlot,
-  toString,
   totalFreeRests,
   use,
   useFamiliar,
   userConfirm,
   useSkill,
   visitUrl,
-  wait,
 } from "kolmafia";
 import {
   $class,
   $effect,
   $effects,
   $familiar,
-  $familiars,
   $item,
-  $items,
   $location,
   $monster,
-  $phylum,
   $skill,
   $slot,
   $slots,
   $stat,
   adventureMacro,
   adventureMacroAuto,
-  Clan,
   get,
   have,
   Macro,
+  CombatLoversLocket,
   Witchess,
 } from "libram";
 import { error } from "libram/dist/console";
@@ -126,13 +115,11 @@ import { SynthesisPlanner } from "./synthesis";
 import {
   getEffect,
   getTonic,
-  hybridize,
-  isHybridized,
   makeTonic,
   tonicsLeft,
 } from "libram/dist/resources/2014/DNALab";
 
-const is100Run = false;
+const is100Run = true;
 
 // rewrite all combats
 // create a defaultFamiliar function that chooses somewhat dynamically
@@ -191,11 +178,6 @@ const synthesisPlanner = new SynthesisPlanner(
   //$effects`Synthesis: Learning, Synthesis: Smart, Synthesis: Strong, Synthesis: Cool, Synthesis: Collection`
   $effects`Synthesis: Learning, Synthesis: Smart, Synthesis: Strong, Synthesis: Cool`
 );
-
-/*
-const defaultFamiliar = $familiar`melodramedary`;
-const defaultFamiliarEquipment = $item`dromedary drinking helmet`;
-*/
 
 function useDefaultFamiliar() {
   if (is100Run) {
@@ -325,6 +307,83 @@ export function withMacro<T>(macro: Macro, action: () => T) {
   }
 }
 
+function moxTurns() {
+  if (myClass() === $class`Pastamancer`) {
+    return 60 - floor((myBuffedstat($stat`moxie`) - myBasestat($stat`mysticality`)) / 30);
+  } else {
+    return 60 - floor((myBuffedstat($stat`moxie`) - myBasestat($stat`moxie`)) / 30);
+  }
+}
+
+function hpTurns() {
+  return 60 - floor((myMaxhp() - myBuffedstat($stat`muscle`) - 3) / 30);
+}
+
+function musTurns() {
+  if (myClass() === $class`Pastamancer`) {
+    return 60 - floor((myBuffedstat($stat`muscle`) - myBasestat($stat`mysticality`)) / 30);
+  } else {
+    return 60 - floor((myBuffedstat($stat`muscle`) - myBasestat($stat`muscle`)) / 30);
+  }
+}
+
+function mysTurns() {
+  return 60 - floor((myBuffedstat($stat`mysticality`) - myBasestat($stat`mysticality`)) / 30);
+}
+
+function hotResTurns() {
+  return 60 - round(numericModifier("hot resistance"));
+}
+
+function nonCombatTurns() {
+  //let's assume i will always have at least -25% combat rate to simplify calculation
+  return 45 + (round(numericModifier("combat rate")) + 25) * 3;
+}
+
+function familiarTurns() {
+  return (
+    60 -
+    floor((familiarWeight(myFamiliar()) + round(numericModifier("familiar weight"))) / 5 + 0.001)
+  );
+}
+
+function weaponTurns() {
+  //code shamelessly copied from TourGuide
+  let modifier_1 = numericModifier("Weapon Damage");
+  let modifier_2 = numericModifier("Weapon Damage Percent");
+
+  $slots`hat,weapon,off-hand,back,shirt,pants,acc1,acc2,acc3,familiar`.forEach((s: Slot) => {
+    const it = equippedItem(s);
+    if (toSlot(it) !== $slot`weapon`) return;
+    const power = getPower(it);
+    const addition = toFloat(power) * 0.15;
+
+    modifier_1 -= addition;
+  });
+
+  if (haveEffect($effect`Bow-Legged Swagger`) > 0) {
+    modifier_1 *= 2;
+    modifier_2 *= 2;
+  }
+  return 60 - (floor(modifier_1 / 50 + 0.001) + floor(modifier_2 / 50 + 0.001));
+}
+
+function spellTurns() {
+  return (
+    60 -
+    floor(numericModifier("spell damage") / 50 + 0.001) -
+    floor(numericModifier("spell damage percent") / 50 + 0.001)
+  );
+}
+
+function itemdrop() {
+  return (
+    60 -
+    floor(numericModifier("Item Drop") / 30 + 0.001) -
+    floor(numericModifier("Booze Drop") / 15 + 0.001)
+  );
+}
+
 function testCoilWire() {
   if (!testDone(TEST_COIL_WIRE)) {
     setClan("Bonus Adventures from Hell");
@@ -426,83 +485,6 @@ function testCoilWire() {
   }
 
   if (myTurncount() < 60) abort("Something went wrong coiling wire.");
-}
-
-function moxTurns() {
-  if (myClass() === $class`Pastamancer`) {
-    return 60 - floor((myBuffedstat($stat`moxie`) - myBasestat($stat`mysticality`)) / 30);
-  } else {
-    return 60 - floor((myBuffedstat($stat`moxie`) - myBasestat($stat`moxie`)) / 30);
-  }
-}
-
-function hpTurns() {
-  return 60 - floor((myMaxhp() - myBuffedstat($stat`muscle`) - 3) / 30);
-}
-
-function musTurns() {
-  if (myClass() === $class`Pastamancer`) {
-    return 60 - floor((myBuffedstat($stat`muscle`) - myBasestat($stat`mysticality`)) / 30);
-  } else {
-    return 60 - floor((myBuffedstat($stat`muscle`) - myBasestat($stat`muscle`)) / 30);
-  }
-}
-
-function mysTurns() {
-  return 60 - floor((myBuffedstat($stat`mysticality`) - myBasestat($stat`mysticality`)) / 30);
-}
-
-function hotResTurns() {
-  return 60 - round(numericModifier("hot resistance"));
-}
-
-function nonCombatTurns() {
-  //let's assume i will always have at least -25% combat rate to simplify calculation
-  return 45 + (round(numericModifier("combat rate")) + 25) * 3;
-}
-
-function familiarTurns() {
-  return (
-    60 -
-    floor((familiarWeight(myFamiliar()) + round(numericModifier("familiar weight"))) / 5 + 0.001)
-  );
-}
-
-function weaponTurns() {
-  //code shamelessly copied from TourGuide
-  let modifier_1 = numericModifier("Weapon Damage");
-  let modifier_2 = numericModifier("Weapon Damage Percent");
-
-  $slots`hat,weapon,off-hand,back,shirt,pants,acc1,acc2,acc3,familiar`.forEach((s: Slot) => {
-    const it = equippedItem(s);
-    if (toSlot(it) !== $slot`weapon`) return;
-    const power = getPower(it);
-    const addition = toFloat(power) * 0.15;
-
-    modifier_1 -= addition;
-  });
-
-  if (haveEffect($effect`Bow-Legged Swagger`) > 0) {
-    modifier_1 *= 2;
-    modifier_2 *= 2;
-  }
-  return 60 - (floor(modifier_1 / 50 + 0.001) + floor(modifier_2 / 50 + 0.001));
-}
-
-function spellTurns() {
-  return (
-    60 -
-    floor(numericModifier("spell damage") / 50 + 0.001) -
-    floor(numericModifier("spell damage percent") / 50 + 0.001)
-  );
-}
-
-function itemdrop() {
-  return (
-    60 -
-    floor(numericModifier("Item Drop") / 30 + 0.001) -
-    floor(numericModifier("Booze Drop") / 15 + 0.001)
-  );
 }
 
 function levelUp() {
@@ -1009,7 +991,8 @@ function levelUp() {
 
     setChoice(1325, 2); // +20% mys exp buff
 
-      // Professor 9x free sausage fight @ NEP
+    // Professor 9x free sausage fight @ NEP
+    if (!is100Run) {
       if (get("_sausageFights") === 0) {
         useFamiliar($familiar`Pocket Professor`);
         tryEquip($item`Pocket Professor memory chip`);
@@ -1032,32 +1015,35 @@ function levelUp() {
           setAutoAttack(0);
         }
       }
+    }
 
-      useDefaultFamiliar();
+    useDefaultFamiliar();
 
-      equip($item`Kramco Sausage-o-Matic™`);
-      equip($slot`acc3`, $item`backup camera`);
-      //equip($slot`shirt`, $item`none`);
-      while (get("_backUpUses") < 7) {
-        if (!haveEffect($effect`Tomes of Opportunity`)) {
-          setChoice(1324, 1); //go to +mys exp buff nc
-        } else {
-          setChoice(1324, 5); //fight
-        }
-        if (getPropertyInt("_sausageFights") >= 3) {
-          equip($item`familiar scrapbook`);
-        }
-        useDefaultFamiliar();
-        adventureMacroAuto(
-          $location`The Neverending Party`,
-          Macro.if_("!monstername Sausage Goblin", Macro.skill("Back-Up to Your Last Enemy")).step(
-            justKillTheThing
-          )
-        );
+    equip($item`Kramco Sausage-o-Matic™`);
+    equip($slot`acc3`, $item`backup camera`);
+    //equip($slot`shirt`, $item`none`);
+    //i am doing ok on stat test so save some backups for aftercore
+    //if it is 100% familiar run, use them all since we aren't doing any professor fights
+    while (get("_backUpUses") < 7 || (is100Run && get("_backUpUses") < 11)) {
+      if (!haveEffect($effect`Tomes of Opportunity`)) {
+        setChoice(1324, 1); //go to +mys exp buff nc
+      } else {
+        setChoice(1324, 5); //fight
       }
-      setAutoAttack(0);
+      if (getPropertyInt("_sausageFights") >= 3) {
+        equip($item`familiar scrapbook`);
+      }
+      useDefaultFamiliar();
+      adventureMacroAuto(
+        $location`The Neverending Party`,
+        Macro.if_("!monstername Sausage Goblin", Macro.skill("Back-Up to Your Last Enemy")).step(
+          justKillTheThing
+        )
+      );
+    }
+    setAutoAttack(0);
 
-          // Breakfast
+    // Breakfast
 
     // Visiting Looking Glass in clan VIP lounge
     visitUrl("clan_viplounge.php?action=lookingglass&whichfloor=2");
@@ -1131,8 +1117,7 @@ function levelUp() {
       (haveSkill($skill`Gingerbread Mob Hit`) && !get("_gingerbreadMobHitUsed"))
     ) {
       ensureNpcEffect($effect`Glittering Eyelashes`, 5, $item`glittery mascara`);
-      //TODO: uncomment when i learn skill
-      //ensureSong($effect`The Magical Mojomuscular Melody`);
+      ensureSong($effect`The Magical Mojomuscular Melody`);
       ensureSong($effect`Polka of Plenty`);
       ensureEffect($effect`Inscrutable Gaze`);
       ensureEffect($effect`Pride of the Puffin`);
@@ -1214,12 +1199,9 @@ function testMox() {
       tryUse(1, $item`runproof mascara`);
     }
     ensureEffect($effect`Blubbered Up`);
-    //TODO: uncomment when i learn skill
-    //ensureEffect($effect`Penne Fedora`);
-    //TODO: uncomment when i learn skill
-    //ensureEffect($effect`Mariachi Mood`);
-    //TODO: uncomment when i learn skill
-    //ensureEffect($effect`Disco State of Mind`);
+    ensureEffect($effect`Penne Fedora`);
+    ensureEffect($effect`Mariachi Mood`);
+    ensureEffect($effect`Disco State of Mind`);
 
     synthesisPlanner.synthesize($effect`Synthesis: Cool`);
 
@@ -1794,18 +1776,20 @@ function testWeaponDamage() {
     // }
 
     if (
-      !getPropertyBoolean("_chateauMonsterFought") &&
       availableAmount($item`corrupted marrow`) === 0 &&
       haveEffect($effect`Cowrruption`) === 0
     ) {
       cliExecute("mood apathetic");
       equip($item`Fourth of May Cosplay Saber`);
       equip($item`familiar scrapbook`);
+      if (get("camelSpit") === 100 && have($familiar`Melodramedary`) && !is100Run) {
+         useFamiliar($familiar`Melodramedary`);
+       }
       Macro.skill($skill`Meteor Shower`)
+        .trySkill($skill`%fn\, spit on me!`)
         .skill($skill`Use the Force`)
         .setAutoAttack();
-      visitUrl("place.php?whichplace=chateau&action=chateau_painting", false);
-      runCombat();
+      CombatLoversLocket.reminisce($monster`ungulith`);
       runChoice(3);
     }
     setAutoAttack(0);
@@ -1823,10 +1807,8 @@ function testWeaponDamage() {
     ensureEffect($effect`Rage of the Reindeer`);
     ensureEffect($effect`Frenzied, Bloody`);
     ensureEffect($effect`Scowl of the Auk`);
-    //TODO: uncomment when you learn this
-    // ensureEffect($effect`Disdain of the War Snapper`);
-    //TODO: uncomment when you learn this
-    // ensureEffect($effect`Tenacity of the Snapper`);
+    ensureEffect($effect`Disdain of the War Snapper`);
+    ensureEffect($effect`Tenacity of the Snapper`);
     ensureSong($effect`Jackasses' Symphony of Destruction`);
     if (availableAmount($item`LOV Elixir #3`) > 0) {
       ensureEffect($effect`The Power of LOV`);
@@ -1897,7 +1879,7 @@ function testWeaponDamage() {
       );
     }
 
-    setProperty("_hccsWeaponTurnsUncapped", `${weaponTurns()  }`);
+    setProperty("_hccsWeaponTurnsUncapped", `${weaponTurns()}`);
     TEMP_TURNS = myTurncount();
     doTest(TEST_WEAPON);
     WEAPON_TURNS = myTurncount() - TEMP_TURNS;
@@ -1980,8 +1962,7 @@ function testSpellDamage() {
     // Meteor showered
     if (haveEffect($effect`Meteor Showered`) === 0) {
       equip($item`Fourth of May Cosplay Saber`);
-      equip($item`familiar scrapbook`);
-      visitUrl("adventure.php?snarfblat=442");
+      equip($item`familiar scrapbook`, $slot`offhand`);
       setChoice(1387, 1);
       adventureMacroAuto(
         $location`The Neverending Party`,
@@ -2002,7 +1983,7 @@ function testSpellDamage() {
       ensurePotionEffect($effect`Concentration`, $item`cordial of concentration`);
     }
 
-    if (round(numericModifier("spell damage")) % 50 >= 39) {
+    if (round(numericModifier("spell damage")) % 50 >= 39 && have($item`baconstone`)) {
       ensureItem(1, $item`vial of Gnomochloric acid`);
       ensurePotionEffect($effect`Baconstoned`, $item`vial of baconstone juice`);
     }
@@ -2050,7 +2031,9 @@ function testItemDrop() {
 
     //getting a lil ninja costume for the tot
     if (availableAmount($item`li'l ninja costume`) === 0 && get("_shatteringPunchUsed") < 3) {
-      Macro.skill($skill`Shattering Punch`).setAutoAttack();
+      Macro.skill($skill`Bowl Straight Up`)
+        .skill($skill`Shattering Punch`)
+        .setAutoAttack();
       mapMonster($location`The Haiku Dungeon`, $monster`amateur ninja`);
       setLocation($location`none`);
       setAutoAttack(0);
