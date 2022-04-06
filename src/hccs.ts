@@ -104,10 +104,11 @@ import {
   $stat,
   adventureMacro,
   adventureMacroAuto,
+  CombatLoversLocket,
   get,
   have,
   Macro,
-  CombatLoversLocket,
+  set,
   Witchess,
 } from "libram";
 import { error } from "libram/dist/console";
@@ -119,7 +120,7 @@ import {
   tonicsLeft,
 } from "libram/dist/resources/2014/DNALab";
 
-const is100Run = true;
+const is100Run = false;
 
 // rewrite all combats
 // create a defaultFamiliar function that chooses somewhat dynamically
@@ -439,9 +440,9 @@ function testCoilWire() {
     }
 
     // Campsite
-    // if (haveEffect($effect`That\'s Just Cloud-Talk, Man`) === 0) {
-    //   visitUrl("place.php?whichplace=campaway&action=campaway_sky");
-    // }
+    if (!have($effect`That's Just Cloud-Talk, Man`)) {
+      visitUrl("place.php?whichplace=campaway&action=campaway_sky");
+    }
 
     // Upgrade saber for fam wt
     visitUrl("main.php?action=may4");
@@ -679,16 +680,17 @@ function levelUp() {
      ensureEffect($effect`Starry-Eyed`);
      ensureEffect($effect`Triple-Sized`);
      ensureEffect($effect`Feeling Excited`);
-     //TODO: uncomment when i acquire skill
-     //ensureSong($effect`The Magical Mojomuscular Melody`);
+     ensureSong($effect`The Magical Mojomuscular Melody`);
      ensureNpcEffect($effect`Glittering Eyelashes`, 5, $item`glittery mascara`);
 
      // Plan is for Beach Comb + PK buffs to fall all the way through to item -> hot res -> fam weight and spell dmg.
      ensureEffect($effect`We're All Made of Starfish`);
      ensureEffect($effect`Do I Know You From Somewhere?`);
 
-     ensureEffect($effect`Merry Smithsness`);
-     useSkill(1, $skill`Incredible Self-Esteem`); //might be something useful
+    ensureEffect($effect`Merry Smithsness`);
+    if (have($skill`Incredible Self-Esteem`)) {
+      useSkill(1, $skill`Incredible Self-Esteem`); //might be something useful
+    }
 
      // visitUrl("desc_effect.php?whicheffect=af64d06351a3097af52def8ec6a83d9b"); //discover g9 effect
      // if (getPropertyInt("_g9Effect") >= 200) {
@@ -734,11 +736,11 @@ function levelUp() {
      // Don't use Kramco here.
      equip($slot`off-hand`, $item`familiar scrapbook`);
 
-    //TODO: uncomment if i get ghost
-    // if (haveEffect($effect`holiday yoked`) === 0 && get("_kgbTranquilizerDartUses") < 3) {
-    //   equip($slot`acc1`, $item`Kremlin's Greatest Briefcase`);
+    //get +50% stats buff from ghost of crimbo carols
+    // if (!have($effect`Holiday Yoked`) && !is100Run) {
     //   useFamiliar($familiar`Ghost of Crimbo Carols`);
-    //   adventureMacroAuto($location`Noob Cave`, Macro.trySkill($skill`KGB tranquilizer dart`));
+    //   equip($slot`acc3`, $item`Lil' Doctor™ bag`);
+    //   adventureMacroAuto($location`Noob Cave`, Macro.trySkill($skill`Reflex Hammer`));
     //   setAutoAttack(0);
     // }
 
@@ -1024,7 +1026,7 @@ function levelUp() {
     //equip($slot`shirt`, $item`none`);
     //i am doing ok on stat test so save some backups for aftercore
     //if it is 100% familiar run, use them all since we aren't doing any professor fights
-    while (get("_backUpUses") < 7 || (is100Run && get("_backUpUses") < 11)) {
+    while (get("_backUpUses") < 5 || (is100Run && get("_backUpUses") < 11)) {
       if (!haveEffect($effect`Tomes of Opportunity`)) {
         setChoice(1324, 1); //go to +mys exp buff nc
       } else {
@@ -1113,8 +1115,9 @@ function levelUp() {
     // 14 free NEP fights, using mob hit and xray
     while (
       getPropertyInt("_neverendingPartyFreeTurns") < 10 ||
-      (haveSkill($skill`Chest X-Ray`) && get("_chestXRayUsed") < 3) ||
-      (haveSkill($skill`Gingerbread Mob Hit`) && !get("_gingerbreadMobHitUsed"))
+      (have($skill`Chest X-Ray`) && get("_chestXRayUsed") < 3) ||
+      (have($skill`Gingerbread Mob Hit`) && !get("_gingerbreadMobHitUsed")) ||
+      (have($skill`Shattering Punch`) && get("_shatteringPunchUsed") < 2)
     ) {
       ensureNpcEffect($effect`Glittering Eyelashes`, 5, $item`glittery mascara`);
       ensureSong($effect`The Magical Mojomuscular Melody`);
@@ -1148,10 +1151,7 @@ function levelUp() {
       // Otherwise fight.
       setChoice(1324, 5);
       ensureMpSausage(100);
-      if (
-        get("_neverendingPartyFreeTurns") < 10 &&
-        get("_feelPrideUsed") < 3
-      ) {
+      if (get("_neverendingPartyFreeTurns") < 10 && get("_feelPrideUsed") < 3) {
         useDefaultFamiliar();
         adventureMacroAuto(
           $location`The Neverending Party`,
@@ -1164,7 +1164,9 @@ function levelUp() {
         useDefaultFamiliar();
         adventureMacroAuto(
           $location`The Neverending Party`,
-          Macro.trySkill($skill`Chest X-Ray`).trySkill($skill`Gingerbread Mob Hit`)
+          Macro.trySkill($skill`Chest X-Ray`)
+            .trySkill($skill`Gingerbread Mob Hit`)
+            .trySkill($skill`Shattering Punch`)
         );
       }
     }
@@ -1386,8 +1388,11 @@ function testHotRes() {
 
     if (availableAmount($item`heat-resistant gloves`) === 0) {
       setAutoAttack(0);
+
+      maximize("ml -tie", false);
       equip($item`Fourth of May Cosplay Saber`);
       equip($slot`offhand`, $item`industrial fire extinguisher`);
+
       //equip($item`vampyric cloake`);
       adv1($location`LavaCo™ Lamp Factory`, -1, "");
       if (
@@ -1511,7 +1516,7 @@ function testHotRes() {
     // abort();
     //logprint(cliExecuteOutput("modtrace hot resistance"));
 
-    setProperty("_hccsHotResTurnsUncapped", `${hotResTurns()  }`);
+    setProperty("_hccsHotResTurnsUncapped", `${hotResTurns()}`);
     TEMP_TURNS = myTurncount();
     doTest(TEST_HOT_RES);
     HOT_RES_TURNS = myTurncount() - TEMP_TURNS;
@@ -1567,7 +1572,7 @@ function testNonCombat() {
     // ensure_effect($effect[A Rose by Any Other Material]);
 
     // wish for disquiet riot because shades are hilariously expensive
-    wishEffect($effect`Disquiet Riot`);
+    // wishEffect($effect`Disquiet Riot`);
 
     useFamiliar($familiar`Disgeist`);
 
@@ -1669,6 +1674,7 @@ function testFamiliarWeight() {
   // }
 
     if (haveEffect($effect`Meteor Showered`) === 0) {
+      maximize("ml -tie", false);
       equip($item`Fourth of May Cosplay Saber`);
       equip($item`familiar scrapbook`);
       setChoice(1387, 1); //we cant force drops so just banish
@@ -1711,6 +1717,13 @@ function testFamiliarWeight() {
     // if (availableAmount($item`green candy heart`) > 0) {
     //   ensureEffect($effect`Heart of Green`);
     // }
+
+    if (is100Run) {
+      useFamiliar(familiarFor100Run);
+    } else {
+      //currently melodramedary ends up with highest familiar weight but maybe calculate this more dynamically
+      useFamiliar($familiar`Melodramedary`);
+    }
 
     maximize("familiar weight", false);
 
@@ -1756,30 +1769,28 @@ function testWeaponDamage() {
     //   print("Something went wrong with getting inner elf");
     // }
 
-    // Deck pull elf for DNA and ghost buff (reflex hammer)
-    // if (!have($effect`Do You Crush What I Crush?`) || get("dnaSyringe") !== $phylum`elf`) {
-    //   if (get("_deckCardsDrawn") === 5) {
-    //     useFamiliar($familiar`Ghost of Crimbo Carols`);
-    //     equip($slot`acc3`, $item`Lil' Doctor™ bag`);
-    //     if (get("_reflexHammerUsed") > 2) {
-    //       throw "You do not have any banishes left";
-    //     }
-    //     Macro.item($item`DNA extraction syringe`)
-    //       .skill($skill`Reflex Hammer`)
-    //       .setAutoAttack();
-    //     cliExecute("cheat phylum elf");
-    //     runCombat();
-    //     useDefaultFamiliar();
-    //   } else {
-    //     throw "You are out of deck pulls.";
-    //   }
-    // }
+    //Get Ghost of Crimbo Carols +100% weapon dmg, +100% spell dmg buff
+    if (!have($effect`Do You Crush What I Crush?`) && !is100Run) {
+      useFamiliar($familiar`Ghost of Crimbo Carols`);
+      equip($slot`acc3`, $item`Lil' Doctor™ bag`);
+      // Don't use Kramco here.
+      equip($slot`off-hand`, $item`familiar scrapbook`);
+      if (get("_reflexHammerUsed") > 2) {
+        throw "You do not have any banishes left";
+      }
+      Macro.skill($skill`Reflex Hammer`).setAutoAttack();
+      adventureMacroAuto($location`The Dire Warren`, Macro.skill($skill`Reflex Hammer`));
+      runCombat();
+      useDefaultFamiliar();
+    }
+    setAutoAttack(0);
 
     if (
       availableAmount($item`corrupted marrow`) === 0 &&
       haveEffect($effect`Cowrruption`) === 0
     ) {
       cliExecute("mood apathetic");
+      maximize("ml -tie", false);
       equip($item`Fourth of May Cosplay Saber`);
       equip($item`familiar scrapbook`);
       if (get("camelSpit") === 100 && have($familiar`Melodramedary`) && !is100Run) {
@@ -1791,6 +1802,7 @@ function testWeaponDamage() {
         .setAutoAttack();
       CombatLoversLocket.reminisce($monster`ungulith`);
       runChoice(3);
+      set("_locketMonstersFought", `1932,${get("_locketMonstersFought")}`);
     }
     setAutoAttack(0);
 
@@ -1961,6 +1973,7 @@ function testSpellDamage() {
     //TODO: probably try a different location since we cant guarantee our familiar won;t attack
     // Meteor showered
     if (haveEffect($effect`Meteor Showered`) === 0) {
+      maximize("ml -tie", false);
       equip($item`Fourth of May Cosplay Saber`);
       equip($item`familiar scrapbook`, $slot`offhand`);
       setChoice(1387, 1);
@@ -2031,6 +2044,7 @@ function testItemDrop() {
 
     //getting a lil ninja costume for the tot
     if (availableAmount($item`li'l ninja costume`) === 0 && get("_shatteringPunchUsed") < 3) {
+      maximize("ml -tie", false);
       Macro.skill($skill`Bowl Straight Up`)
         .skill($skill`Shattering Punch`)
         .setAutoAttack();
@@ -2158,10 +2172,10 @@ export function main() {
   targetTurns.set(TEST_MYS, 1);
   targetTurns.set(TEST_MOX, 1);
   targetTurns.set(TEST_HOT_RES, 1);
-  targetTurns.set(TEST_NONCOMBAT, 1);
-  targetTurns.set(TEST_FAMILIAR, 30);
-  targetTurns.set(TEST_WEAPON, 1);
-  targetTurns.set(TEST_SPELL, 29);
+  targetTurns.set(TEST_NONCOMBAT, 3);
+  targetTurns.set(TEST_FAMILIAR, 31);
+  targetTurns.set(TEST_WEAPON, 4);
+  targetTurns.set(TEST_SPELL, 19);
   targetTurns.set(TEST_ITEM, 1);
 
   try {
@@ -2243,7 +2257,7 @@ export function main() {
     cliExecute("mood default");
     cliExecute("ccs default");
     cliExecute("boombox food");
-    cliExecute("/whitelist Reddit United");
+    cliExecute("/whitelist The Average Clan");
 
     visitUrl("peevpee.php?action=smashstone&confirm=on");
     print("Stone smashed. Get your PVP on!", "green");
