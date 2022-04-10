@@ -5,7 +5,8 @@ import { $class, $item, $slot, ascend, Lifestyle, Paths, prepareAscension } from
 export function main(args = ""): void {
     const myworkshed = args.split(" ").includes("dna")
         ? `Little Geneticist DNA-Splicing Lab`
-        : `Asdon Martin keyfob`;
+        : args.split(" ").includes("dna") ? `Asdon Martin keyfob`
+        : `cold medicine cabinet`;
 
     let myClass = $class`Pastamancer`;
 
@@ -22,15 +23,15 @@ export function main(args = ""): void {
     }
 
     print(
-        `you're about to ascend as a ${myClass} with a ${myworkshed}! you provided ${args} as options`,
+        `You're about to ascend as a ${myClass} with a ${myworkshed}! you provided ${args} as options`,
         "green"
     );
 
-    wait(30);
+    wait(15);
 
     prepareAscension({
-        workshed: myworkshed,
-        garden: "Peppermint Pip Packet",
+        //workshed: myworkshed,
+        //garden: "Peppermint Pip Packet",
         eudora: "Our Daily Candles™ order form",
 
         chateau: {
@@ -43,8 +44,8 @@ export function main(args = ""): void {
     ascend(
         Paths.CommunityService,
         myClass,
-        Lifestyle.hardcore,
-        "wallaby",
+        Lifestyle.softcore,
+        "blender",  //+10% mys gain, +5 advs from booze //TODO: change to another sign if i don't need the candies or the mys gain
         $item`astral six-pack`,
         $item`astral statuette`
     );

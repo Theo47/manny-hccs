@@ -5,7 +5,7 @@ const path = require("path");
 module.exports = {
   entry: {
     // Point "entry" to scripts you want to be CLI-eligible.
-    mannyLoop: "./src/index.ts",
+    hccs: "./src/index.ts",
     hccsAscend: "./src/hccsAscend.ts",
     // hccsLibrams: "./src/hccsLibrams.ts",
     hccsPre: "./src/hccsPre.ts",
@@ -16,7 +16,7 @@ module.exports = {
   output: {
     // Change the final string here to the name you want your script to use in mafia.
     // eslint-disable-next-line no-undef
-    path: path.resolve(__dirname, "KoLmafia", "scripts", "manny-hccs"),
+    path: path.resolve(__dirname, "KoLmafia", "scripts", "theo-hccs"),
     filename: "[name].js",
     libraryTarget: "commonjs",
   },

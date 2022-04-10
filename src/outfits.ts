@@ -161,7 +161,7 @@ export function withOutfit<T>(outfit: Outfit, callback: () => T): T {
 
 export default function uniform(...changes: (Item | [Item, Slot])[]): void {
     const defaultUniform = {
-        hat: $item`Iunion Crown`,
+        hat: $items`Iunion Crown, wad of used tape`,
         shirt: $item`fresh coat of paint`,
         pants: $items`pantogram pants, Cargo Cultist Shorts, old sweatpants`,
         weapon: $item`Fourth of May Cosplay Saber`,
@@ -208,34 +208,41 @@ export function wireOutfit(): void {
 
 export function moxieOutfit(): void {
     cliExecute("retrocape robot");
-    Outfit.doYourBest({
-        hat: $item`very pointy crown`,
-        shirt: $items`shoe ad T-shirt, fresh coat of paint`,
-        back: $item`unwrapped knock-off retro superhero cape`,
-        weapon: $item`Fourth of May Cosplay Saber`,
-        pants: $item`Cargo Cultist Shorts`,
-        acc1: $item`Beach Comb`,
-        acc2: $item`"I Voted!" sticker`,
-        acc3: $item`Retrospecs`,
-        familiar: $item`miniature crystal ball`,
-    }).dress();
+    Outfit.doYourBest(
+        {
+            hat: $item`very pointy crown`,
+            shirt: $items`shoe ad T-shirt, fresh coat of paint`,
+            back: $item`unwrapped knock-off retro superhero cape`,
+            weapon: $item`Fourth of May Cosplay Saber`,
+            offhand: $item`oversized sparkler`,
+            pants: $item`Cargo Cultist Shorts`,
+            acc1: $item`Beach Comb`,
+            acc2: $item`"I Voted!" sticker`,
+            acc3: $items`Retrospecs, Kremlin's Greatest Briefcase`,
+            familiar: $item`unbreakable umbrella`,
+        },
+        $familiar`Left-Hand Man`
+    ).dress();
 }
 
 export function hpOutfit(): void {
     cliExecute("retrocape vampire");
     if (!have($item`wad of used tape`)) cliExecute("fold wad of used tape");
-    Outfit.doYourBest({
-        hat: $item`wad of used tape`,
-        weapon: $item`dented scepter`,
-        offhand: $item`Fourth of May Cosplay Saber`,
-        shirt: $items`shoe ad T-shirt, fresh coat of paint`,
-        back: $item`unwrapped knock-off retro superhero cape`,
-        pants: $item`Cargo Cultist Shorts`,
-        acc1: $item`Brutal brogues`,
-        acc2: $item`Retrospecs`,
-        acc3: $item`Kremlin's Greatest Briefcase`,
-        familiar: $item`miniature crystal ball`,
-    }).dress();
+    Outfit.doYourBest(
+        {
+            hat: $item`wad of used tape`,
+            weapon: $items`dented scepter`,
+            offhand: $items`fish hatchet, Fourth of May Cosplay Saber`,
+            shirt: $items`shoe ad T-shirt, fresh coat of paint`,
+            back: $item`unwrapped knock-off retro superhero cape`,
+            pants: $item`Cargo Cultist Shorts`,
+            acc1: $item`Brutal brogues`,
+            acc2: $items`Retrospecs, Lil' Doctor™ bag`,
+            acc3: $item`Kremlin's Greatest Briefcase`,
+            familiar: $item`unbreakable umbrella`,
+        },
+        $familiar`Left-Hand Man`
+    ).dress();
 }
 
 export function muscleOutfit(): void {
@@ -247,18 +254,16 @@ export function muscleOutfit(): void {
             weapon: $item`dented scepter`,
             offhand: have($familiar`Disembodied Hand`)
                 ? $items`cosmetic football`
-                : $item`Fourth of May Cosplay Saber`,
+                : $items`fish hatchet, Fourth of May Cosplay Saber`,
             shirt: $items`shoe ad T-shirt, fresh coat of paint`,
             back: $item`unwrapped knock-off retro superhero cape`,
             pants: $item`Cargo Cultist Shorts`,
             acc1: $item`Brutal brogues`,
-            acc2: $item`Retrospecs`,
+            acc2: $items`Retrospecs, "I Voted!" sticker`,
             acc3: $item`Kremlin's Greatest Briefcase`,
-            familiar: have($familiar`Disembodied Hand`)
-                ? $item`Fourth of May Cosplay Saber`
-                : $item`miniature crystal ball`,
+            familiar: $item`unbreakable umbrella`,
         },
-        have($familiar`Disembodied Hand`) ? $familiar`Disembodied Hand` : undefined
+        $familiar`Left-Hand Man`
     ).dress();
 }
 
@@ -273,9 +278,9 @@ export function mysticalityOutfit(): void {
             shirt: $items`denim jacket, shoe ad T-shirt, fresh coat of paint`,
             pants: $items`pantogram pants, Cargo Cultist Shorts`,
             acc1: $item`your cowboy boots`,
-            acc2: $item`Retrospecs`,
+            acc2: $items`Retrospecs, dorky glasses`,
             acc3: $item`battle broom`,
-            familiar: $items`Abracandalabra`,
+            familiar: $items`unbreakable umbrella, Abracandalabra`,
         },
         $familiar`Left-Hand Man`
     ).dress();
@@ -286,13 +291,13 @@ export function itemOutfit(): void {
     Outfit.doYourBest(
         {
             hat: $item`wad of used tape`,
-            weapon: $items`extra-large utility candle`,
+            weapon: $items`oversized sparkler, extra-large utility candle`,
             // eslint-disable-next-line libram/verify-constants
             offhand: $item`unbreakable umbrella`,
             back: $item`protonic accelerator pack`,
             acc1: $item`Guzzlr tablet`,
-            acc2: $item`gold detective badge`,
-            acc3: $items`government-issued night-vision goggles`,
+            acc2: $items`your cowboy boots, gold detective badge`,
+            acc3: $items`combat lover's locket, government-issued night-vision goggles`,
             familiar: $item`li'l ninja costume`,
         },
         $familiar`Trick-or-Treating Tot`
@@ -321,9 +326,10 @@ export function noncombatOutfit(): void {
         {
             hat: $item`very pointy crown`,
             back: $item`protonic accelerator pack`,
-            weapon: $item`Fourth of May Cosplay Saber`,
+            weapon: $items`fish hatchet, Fourth of May Cosplay Saber`,
             // eslint-disable-next-line libram/verify-constants
             offhand: $items`unbreakable umbrella`,
+            pants: $items`pantogram pants`,
             acc1: $item`Kremlin's Greatest Briefcase`,
             acc2: $items`hewn moon-rune spoon`,
             acc3: $item`Brutal brogues`,
@@ -338,7 +344,7 @@ export function famweightOutfit(): void {
         : have($familiar`Baby Bugged Bugbear`)
         ? { fam: $familiar`Baby Bugged Bugbear`, equip: $item`bugged beanie` }
         : {
-              fam: $familiar`Blood-Faced Volleyball`,
+              fam: $familiar`Melodramedary`,
               equip: have($item`astral pet sweater`) ? $item`astral pet sweater` : $item`none`,
           };
     Outfit.doYourBest(
@@ -367,8 +373,7 @@ export function weaponOutfit(): void {
             acc2: $item`Kremlin's Greatest Briefcase`,
             acc3: $items`meteorite ring, Powerful Glove`,
             familiar: $items`Stick-Knife of Loathing`,
-        },
-        $familiar`Disembodied Hand`
+        }
     ).dress();
 }
 
@@ -378,19 +383,14 @@ export function spellOutfit(): void {
     }
     const { familiar, famEquip } = {
         familiar: $familiar`Left-Hand Man`,
-        famEquip: $items`astral statuette`,
+        famEquip: $items`Abracandalabra, astral statuette`,
     };
 
     Outfit.doYourBest(
         {
             hat: $items`sugar chapeau, Hollandaise helmet`,
             weapon: $item`weeping willow wand`,
-            offhand: [
-                $item`Abracandalabra`,
-                ...(inHardcore()
-                    ? $items`weeping willow wand, astral statuette`
-                    : $items`obsidian nutcracker`),
-            ],
+            offhand: $item`wrench`,
             familiar: famEquip,
             pants: $items`pantogram pants, Cargo Cultist Shorts`,
             acc1: $items`meteorite necklace, Kremlin's Greatest Briefcase`,

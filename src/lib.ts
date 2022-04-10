@@ -65,7 +65,7 @@ import {
     set,
 } from "libram";
 import { NumericProperty } from "libram/dist/propertyTypes";
-import { propertyManager } from ".";
+import { familiarFor100Run, is100Run, propertyManager } from ".";
 import Macro from "./combat";
 
 export function setChoice(adv: number, choice: number) {
@@ -308,10 +308,11 @@ const allSongs = Skill.all()
     )
     .map((skill) => toEffect(skill));
 export function openSongSlot(song: Effect) {
+    if (haveEffect(song)) return;
     for (const songSlot of songSlots) {
         if (songSlot.includes(song)) {
             for (const shruggable of songSlot) {
-                shrug(shruggable);
+                if (shruggable !== song) shrug(shruggable);
             }
         }
     }
@@ -378,16 +379,20 @@ export function horse(horse: string): void {
 }
 
 export function useDefaultFamiliar(): void {
-    if (get("camelSpit") < 100 && !CommunityService.WeaponDamage.isDone()) {
+    if (is100Run) {
+        useFamiliar(familiarFor100Run);
+    }
+    else if (get("camelSpit") < 100 && !CommunityService.WeaponDamage.isDone()) {
         useFamiliar($familiar`Melodramedary`);
-        equip($item`dromedary drinking helmet`);
+        if (have($item`dromedary drinking helmet`)) equip($item`dromedary drinking helmet`);
     } else if (
+        have($familiar`Shorter-Order Cook`) &&
         availableAmount($item`short stack of pancakes`) === 0 &&
         haveEffect($effect`Shortly Stacked`) === 0 &&
         !CommunityService.FamiliarWeight.isDone()
     ) {
         useFamiliar($familiar`Shorter-Order Cook`);
-    } else if (
+    } else if ( have($familiar`Garbage Fire`)  &&
         availableAmount($item`rope`) < 1 &&
         availableAmount($item`burning newspaper`) + availableAmount($item`burning paper crane`) <
             1 &&
@@ -395,7 +400,7 @@ export function useDefaultFamiliar(): void {
     ) {
         useFamiliar($familiar`Garbage Fire`);
     } else {
-        useFamiliar($familiar`Machine Elf`);
+        useFamiliar($familiar`Hovering Sombrero`);
     }
 }
 
@@ -453,24 +458,28 @@ export function ensureInnerElf(): void {
 }
 
 function castBestLibram() {
-    if (availableAmount($item`BRICKO eye brick`) + get("_brickoFights") < 2 && myLevel() < 14) {
+    if (
+        have($skill`Summon BRICKOs`) &&
+        availableAmount($item`BRICKO eye brick`) + get("_brickoFights") < 2 &&
+        myLevel() < 14
+    ) {
         useSkill($skill`Summon BRICKOs`);
-    } else if (
+    } else if ( have($skill`Summon Candy Heart`) &&
         availableAmount($item`green candy heart`) < 1 &&
         !get("csServicesPerformed").includes("Breed More Collies")
     ) {
         useSkill($skill`Summon Candy Heart`);
-    } else if (
+    } else if ( have($skill`Summon Candy Heart`) &&
         availableAmount($item`lavender candy heart`) < 1 &&
         !get("csServicesPerformed").includes("Make Margaritas")
     ) {
         useSkill($skill`Summon Candy Heart`);
-    } else if (
+    } else if ( have($skill`Summon Love Song`) &&
         availableAmount($item`love song of icy revenge`) < 2 &&
         !get("csServicesPerformed").includes("Breed More Collies")
     ) {
         useSkill($skill`Summon Love Song`);
-    } else {
+    } else if (have($skill`Summon Taffy`)) {
         useSkill($skill`Summon Taffy`);
     }
 }
