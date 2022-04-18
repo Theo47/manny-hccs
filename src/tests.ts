@@ -366,7 +366,6 @@ export function mysPrep() {
 }
 
 export function nonCombatPrep() {
-    // TODO: Move to leveling, switch to stats
     if (get("_godLobsterFights") < 3 && !is100Run) {
         if (myHp() < 0.8 * myMaxhp()) useSkill(1, $skill`Cannelloni Cocoon`);
         useFamiliar($familiar`God Lobster`);
@@ -499,13 +498,6 @@ export function hotResPrep() {
 
     ensureEffect($effect`Feeling Peaceful`);
 
-    // TODO: Maybe ditch this
-    // if (availableAmount($item`cracker`) === 0 && get("tomeSummons") < 3) {
-    //     useFamiliar($familiar`Exotic Parrot`);
-    //     resources.clipArt($item`box of Familiar Jacks`);
-    //     use($item`box of Familiar Jacks`);
-    // }
-
     useFamiliar($familiar`Exotic Parrot`);
 
     // Mafia sometimes can't figure out that multiple +weight things would get us to next tier.
@@ -540,6 +532,12 @@ export function famWtPrep() {
     ensureEffect($effect`Puzzle Champ`);
     ensureEffect($effect`Billiards Belligerence`);
     tryEnsureEffect($effect`Shortly Stacked`);
+
+    // NC reward
+    ensureEffect($effect`Robot Friends`);
+
+    useFamiliar($familiar`Baby Bugged Bugbear`);
+    visitUrl("arena.php");
 
     // use freeruns at gingerbread city to get gingerbread spice latte
     // if (
@@ -614,12 +612,6 @@ export function famWtPrep() {
     }
 
     tryEnsureEffect($effect`Heart of Green`);
-
-    // if (have($item`cracker`)) useFamiliar($familiar`Exotic Parrot`);
-    // else useFamiliar($familiar`Baby Bugged Bugbear`);
-
-    // NC reward
-    ensureEffect($effect`Robot Friends`);
 
     pullIfPossible($item`Great Wolf's beastly trousers`, -1);
 
