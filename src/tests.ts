@@ -83,10 +83,12 @@ import {
     ensureNpcEffect,
     ensureOde,
     ensurePotionEffect,
+    ensurePullEffect,
     ensureSewerItem,
     ensureSong,
     equalizeStat,
     incrementProperty,
+    pullIfPossible,
     setChoice,
     tryEnsureEffect,
     tryUse,
@@ -206,15 +208,14 @@ export function coilPrep() {
     // TODO: see if you can cut this
     retrieveItem(1, $item`fish hatchet`);
 
-    //TODO: enable if i get clip art, pull this on softcore?
-    // if (!get("_borrowedTimeUsed")) {
-    //     if (!have($item`borrowed time`)) resources.clipArt($item`borrowed time`);
-    //     use($item`borrowed time`);
-    // }
+    if (!get("_borrowedTimeUsed")) {
+        if (!have($item`borrowed time`)) resources.clipArt($item`borrowed time`);
+        use($item`borrowed time`);
+    }
 
-    while (get("_smithsnessSummons") < 3) {
+    while (get("_smithsnessSummons") < 1) {
         ensureMpTonic(6);
-        useSkill($skill`Summon Smithsness`);
+        resources.tome($skill`Summon Smithsness`);
     }
 
     //TODO: i don't have borrowed time so need to eat/drink here to get to 60 adventures
@@ -223,12 +224,11 @@ export function coilPrep() {
         eat(2, $item`This Charming Flan`);
     }
 
-    //TODO: enable if i buy clip art, pull this on softcore?
-    // if (!have($item`dromedary drinking helmet`) && get("tomeSummons") < 3) {
-    //     resources.clipArt($item`box of Familiar Jacks`);
-    //     useFamiliar($familiar`Melodramedary`);
-    //     use($item`box of Familiar Jacks`);
-    // }
+    if (!have($item`dromedary drinking helmet`) && get("tomeSummons") < 3 && !is100Run) {
+        resources.clipArt($item`box of Familiar Jacks`);
+        useFamiliar($familiar`Melodramedary`);
+        use($item`box of Familiar Jacks`);
+    }
 
     // fight a ghost and kramco before coiling
     function firstFights() {
@@ -408,7 +408,7 @@ export function nonCombatPrep() {
     // Pastamancer d1 is -combat.
     // if (myClass() === $class`Pastamancer`) ensureEffect($effect`Blessing of the Bird`);
 
-    cliExecute("umbrella nc");
+    cliExecute("acquire 1 unbreakable umbrella; umbrella nc");
 
     //maximize("-combat, 0.01 familiar weight", false);
     noncombatOutfit();
@@ -432,8 +432,12 @@ export function hotResPrep() {
     ensureEffect($effect`Billiards Belligerence`);
     ensureEffect($effect`Astral Shell`);
     ensureEffect($effect`Elemental Saucesphere`);
-    cliExecute(`smash ${availableAmount($item`ratty knitted cap`)} ratty knitted cap`);
-    cliExecute(`smash ${availableAmount($item`red-hot sausage fork`)} red-hot sausage fork`);
+    if (have($item`ratty knitted cap`)) {
+        cliExecute(`smash ${availableAmount($item`ratty knitted cap`)} ratty knitted cap`);
+    }
+    if (have($item`red-hot sausage fork`)) {
+        cliExecute(`smash ${availableAmount($item`red-hot sausage fork`)} red-hot sausage fork`);
+    }
 
     ensureEffect($effect`Blood Bond`);
     ensureEffect($effect`Leash of Linguini`);
@@ -496,7 +500,6 @@ export function hotResPrep() {
     ensureEffect($effect`Feeling Peaceful`);
 
     // TODO: Maybe ditch this
-    //TODO: enable if i get clip art?
     // if (availableAmount($item`cracker`) === 0 && get("tomeSummons") < 3) {
     //     useFamiliar($familiar`Exotic Parrot`);
     //     resources.clipArt($item`box of Familiar Jacks`);
@@ -507,7 +510,7 @@ export function hotResPrep() {
 
     // Mafia sometimes can't figure out that multiple +weight things would get us to next tier.
 
-    cliExecute("briefcase e hot");
+    cliExecute("briefcase e hot -combat");
     cliExecute("retrocape mus hold");
     if (
         availableAmount($item`metal meteoroid`) > 0 &&
@@ -617,6 +620,8 @@ export function famWtPrep() {
 
     // NC reward
     ensureEffect($effect`Robot Friends`);
+
+    pullIfPossible($item`Great Wolf's beastly trousers`, -1);
 
     //maximize("familiar weight", false);
 
@@ -746,26 +751,30 @@ export function WeaponPrep() {
 
     ensureEffect($effect`Bow-Legged Swagger`);
 
-    resources.wish($effect`Outer Wolf™`);
+    ensurePullEffect($effect`Wasabi With You`, $item`wasabi marble soda`);
+    ensurePullEffect(
+        $effect`Things Man Was Not Meant to Eat`,
+        $item`fudge-shaped hole in space-time`
+    );
+
+    // resources.wish($effect`Outer Wolf™`);
+
+    // make KGB set to weapon
+    cliExecute("briefcase e weapon spell");
+    useFamiliar($familiar`Left-Hand Man`);
+    //maximize("weapon damage", false);
+
+    weaponOutfit();
 
     if (CommunityService.WeaponDamage.prediction > 5) {
         // Rictus of Yeg = 200% Weapon damage
         //if weapon turns are less than 5, we want to use it on spell damage instead for -4 turns there
-        if (
-            !get("_cargoPocketEmptied") &&
-            !have($effect`Rictus of Yeg`)
-        ) {
+        if (!get("_cargoPocketEmptied") && !have($effect`Rictus of Yeg`)) {
             if (availableAmount($item`Yeg's Motel toothbrush`) === 0) cliExecute("cargo 284");
             ensureEffect($effect`Rictus of Yeg`);
         }
     }
 
-    // make KGB set to weapon
-    cliExecute("briefcase e weapon");
-    useFamiliar($familiar`Left-Hand Man`);
-    //maximize("weapon damage", false);
-
-    weaponOutfit();
     if (globalOptions.debug) {
         logprint(cliExecuteOutput("modtrace weapon damage"));
     }
@@ -782,11 +791,6 @@ export function spellPrep() {
     ensureEffect($effect`Carol of the Hells`);
     tryEnsureEffect($effect`Arched Eyebrow of the Archmage`);
     ensureSong($effect`Jackasses' Symphony of Destruction`);
-
-    // pull wrench from deck for +100% spell dmg
-    if (get("_deckCardsDrawn") === 5) {
-        resources.deck("wrench");
-    }
 
     // if (!get("grimoire3Summons") && have($skill`Summon Alice's Army Cards`)) {
     //     useSkill(1, $skill`Summon Alice's Army Cards`);
@@ -861,6 +865,15 @@ export function spellPrep() {
 
     //maximize("spell damage", false);
 
+    pullIfPossible($item`Staff of the Deepest Freeze`, -1);
+    ensurePullEffect($effect`Pisces in the Skyces`, $item`tobiko marble soda`);
+    ensurePullEffect($effect`Things Man Was Not Meant to Eat`,$item`fudge-shaped hole in space-time`);
+
+    // pull wrench from deck for +100% spell dmg
+    if (get("_deckCardsDrawn") === 5 && !have($item`Staff of the Deepest Freeze`)) {
+        resources.deck("wrench");
+    }
+
     spellOutfit();
     if (globalOptions.debug) {
         logprint(cliExecuteOutput("modtrace spell damage"));
@@ -885,7 +898,7 @@ export function itemPrep() {
         takeCloset($item`Swizzler`, closetAmount($item`Swizzler`));
     }
 
-    if (availableAmount($item`li'l ninja costume`) === 0 && get("_shatteringPunchUsed") < 3) {
+    if (availableAmount($item`li'l ninja costume`) === 0 && !get("_gingerbreadMobHitUsed")) {
         if (!is100Run) {
             useFamiliar($familiar`none`);
         }
@@ -899,11 +912,11 @@ export function itemPrep() {
             $monster`amateur ninja`,
             Macro.trySkill($skill`Become a Bat`)
                 .trySkill($skill`Bowl Straight Up`)
-                .skill($skill`Shattering Punch`)
+                .skill($skill`Gingerbread Mob Hit`)
         );
     }
 
-    if (get("_deckCardsDrawn") === 10) {
+    if (get("_deckCardsDrawn") <= 10 && !have($effect`Fortune of the Wheel`)) {
         resources.deck("buff items");
     }
 
@@ -937,7 +950,7 @@ export function itemPrep() {
         cliExecute("barrelprayer buff");
     }
 
-    cliExecute("umbrella item");
+    cliExecute("acquire 1 unbreakable umbrella; umbrella item");
 
     ensureEffect($effect`Steely-Eyed Squint`);
 
@@ -945,10 +958,7 @@ export function itemPrep() {
     // TODO: figure out a final check here to make it not get the buff unless it will get the test to 1 turn
     if (get("csServicesPerformed").split(",").length === 10) ensureEffect($effect`Feeling Lost`);
 
-    // maximize(
-    //     "item, 2 booze drop, -equip broken champagne bottle, -equip surprisingly capacious handbag",
-    //     false
-    // );
+    // maximize("item, 2 booze drop, -equip broken champagne bottle, -equip surprisingly capacious handbag",false );
 
     itemOutfit();
     if (globalOptions.debug) {

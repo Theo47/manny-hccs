@@ -65,7 +65,7 @@ import {
     set,
 } from "libram";
 import { NumericProperty } from "libram/dist/propertyTypes";
-import { familiarFor100Run, is100Run, propertyManager } from ".";
+import { familiarFor100Run, is100Run, propertyManager, resources } from ".";
 import Macro from "./combat";
 
 export function setChoice(adv: number, choice: number) {
@@ -268,23 +268,23 @@ export function wishEffect(ef: Effect) {
     }
 }
 
-export function pullIfPossible(quantity: number, it: Item, maxPrice: number) {
-    if (pullsRemaining() > 0) {
-        const quantityPull = Math.max(0, quantity - availableAmount(it));
+export function pullIfPossible(it: Item, maxPrice: number) {
+    if (pullsRemaining() > 0 && !have(it)) {
         if (shopAmount(it) > 0) {
-            takeShop(Math.min(shopAmount(it), quantityPull), it);
+            takeShop(Math.min(shopAmount(it), 1), it);
         }
-        if (storageAmount(it) < quantityPull) {
-            buyUsingStorage(quantityPull - storageAmount(it), it, maxPrice);
+        if (storageAmount(it) === 0) {
+            buyUsingStorage(1, it, maxPrice);
         }
-        cliExecute(`pull ${quantityPull} ${it.name}`);
+        cliExecute(`pull 1 ${it.name}`);
+        resources.pulls.push(it);
         return true;
     } else return false;
 }
 
 export function ensurePullEffect(ef: Effect, it: Item) {
-    if (haveEffect(ef) === 0) {
-        if (availableAmount(it) > 0 || pullIfPossible(1, it, 50000)) ensureEffect(ef);
+    if (!have(ef)) {
+        if (availableAmount(it) > 0 || pullIfPossible(it, 50000)) ensureEffect(ef);
     }
 }
 
@@ -382,9 +382,13 @@ export function useDefaultFamiliar(): void {
     if (is100Run) {
         useFamiliar(familiarFor100Run);
     }
-    else if (get("camelSpit") < 100 && !CommunityService.WeaponDamage.isDone()) {
+    else if (
+        get("camelSpit") < 100 &&
+        !CommunityService.WeaponDamage.isDone() &&
+        have($item`dromedary drinking helmet`) //without dromedary drinking helmet, i don't have enough turns to charge it
+    ) {
         useFamiliar($familiar`Melodramedary`);
-        if (have($item`dromedary drinking helmet`)) equip($item`dromedary drinking helmet`);
+        equip($item`dromedary drinking helmet`);
     } else if (
         have($familiar`Shorter-Order Cook`) &&
         availableAmount($item`short stack of pancakes`) === 0 &&
@@ -392,7 +396,8 @@ export function useDefaultFamiliar(): void {
         !CommunityService.FamiliarWeight.isDone()
     ) {
         useFamiliar($familiar`Shorter-Order Cook`);
-    } else if ( have($familiar`Garbage Fire`)  &&
+    } else if (
+        have($familiar`Garbage Fire`) &&
         availableAmount($item`rope`) < 1 &&
         availableAmount($item`burning newspaper`) + availableAmount($item`burning paper crane`) <
             1 &&

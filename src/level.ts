@@ -134,23 +134,23 @@ export function level(): void {
 
     uniform();
 
-    if (
-        !have($item`tomato`) &&
-        !have($item`tomato juice of powerful power`) &&
-        !have($effect`Tomato Power`) &&
-        get("lastCopyableMonster") !== $monster`possessed can of tomatoes` &&
-        myClass() === $class`Pastamancer`
-    ) {
-        equip($slot`off-hand`, $item`none`);
-        equip($slot`acc3`, $item`Lil' Doctor™ bag`);
-        useDefaultFamiliar();
-        resources.mapMacro(
-            $location`The Haunted Pantry`,
-            $monster`possessed can of tomatoes`,
-            Macro.skill($skill`Reflex Hammer`)
-        );
-    }
-    ensurePotionEffect($effect`Tomato Power`, $item`tomato juice of powerful power`);
+    // if (
+    //     !have($item`tomato`) &&
+    //     !have($item`tomato juice of powerful power`) &&
+    //     !have($effect`Tomato Power`) &&
+    //     get("lastCopyableMonster") !== $monster`possessed can of tomatoes` &&
+    //     myClass() === $class`Pastamancer`
+    // ) {
+    //     equip($slot`off-hand`, $item`none`);
+    //     equip($slot`acc3`, $item`Lil' Doctor™ bag`);
+    //     useDefaultFamiliar();
+    //     resources.mapMacro(
+    //         $location`The Haunted Pantry`,
+    //         $monster`possessed can of tomatoes`,
+    //         Macro.skill($skill`Reflex Hammer`)
+    //     );
+    // }
+    // ensurePotionEffect($effect`Tomato Power`, $item`tomato juice of powerful power`);
 
     //TODO: replace this with bander runaways
     // grab candies from gingerbread city, since we lack the other options to get them
@@ -202,6 +202,12 @@ export function level(): void {
 
     if (!get("_chubbyAndPlumpUsed")) {
         useSkill(1, $skill`Chubby and Plump`);
+    }
+
+    if (!have($item`bugged beanie`)) {
+        useFamiliar($familiar`Baby Bugged Bugbear`);
+        visitUrl("arena.php");
+        useDefaultFamiliar()
     }
 
     // Depending on crimbo candy summons, gets synth learning, possibly getting bugged beanie if it needs a tome summon
@@ -257,7 +263,7 @@ export function level(): void {
     }
 
     // Make umbrella +ML
-    cliExecute("umbrella ml");
+    cliExecute("acquire 1 unbreakable umbrella; umbrella ml");
 
     equip($slot`acc1`, $item`Powerful Glove`);
     ensureEffect($effect`Starry-Eyed`);
@@ -527,11 +533,7 @@ export function level(): void {
     }
 
     // 14 free NEP fights
-    while (
-        get("_neverendingPartyFreeTurns") < 10 ||
-        get("_shatteringPunchUsed") < 2 ||
-        !get("_gingerbreadMobHitUsed")
-    ) {
+    while (get("_neverendingPartyFreeTurns") < 10 || get("_shatteringPunchUsed") < 3) {
         useDefaultFamiliar();
         if (globalOptions.debug)
             print(
@@ -568,7 +570,7 @@ export function level(): void {
                 .trySkill($skill`Feel Pride`)
                 .externalIf(
                     get("_neverendingPartyFreeTurns") === 10,
-                    Macro.trySkill($skill`Shattering Punch`, $skill`Gingerbread Mob Hit`).abort()
+                    Macro.trySkill($skill`Shattering Punch`).abort()
                 )
 
                 .kill()

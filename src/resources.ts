@@ -1,4 +1,5 @@
 import {
+    abort,
     cliExecute,
     create,
     eat,
@@ -97,14 +98,22 @@ export class ResourceTracker {
     }
 
     mapMacro(location: Location, monster: Monster, macro: Macro): void {
-        macro.setAutoAttack();
-        useSkill($skill`Map the Monsters`);
+        if (!macro.toString().includes("Use the Force")) {
+            //do not send as autoattack if we are using the saber since that messes up tracking
+            macro.setAutoAttack();
+        } else {
+            macro.save();
+        }
+            useSkill($skill`Map the Monsters`);
         if (!get("mappingMonsters")) throw `I am not actually mapping anything. Weird!`;
         else {
+            let i = 0;
             while (get("mappingMonsters")) {
+                if (i > 0) abort(`something went wrong mapping`);
                 visitUrl(toUrl(location));
                 runChoice(1, `heyscriptswhatsupwinkwink=${monster.id}`);
                 runCombat(macro.toString());
+                i++;
             }
             this.maps.push(monster);
         }
@@ -115,7 +124,7 @@ export class ResourceTracker {
         print(`Deck: ${this.deckCards.join(", ")}`);
         print(`Wishes: ${this.genieWishes.map((effect) => effect.name).join(", ")}`);
         print(`Tomes: ${this.tomeSummons.map((skillOrItem) => skillOrItem.name).join(", ")}`);
-        // print(`Pulls: ${this.pulls.map((item) => item.name).join(", ")}`);
+        print(`Pulls: ${this.pulls.map((item) => item.name).join(", ")}`);
         print(`Sabers: ${this.saberForces.map((effectOrItem) => effectOrItem.name).join(", ")}`);
         print(`Locket Fights: ${this.lockets.map((monster) => monster.name).join(", ")}`);
         print(`Maps: ${this.maps.map((monster) => monster.name).join(", ")}`);

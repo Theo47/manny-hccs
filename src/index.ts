@@ -88,9 +88,9 @@ try {
     assertTest(CommunityService.Mysticality.run(mysPrep, 1), "Mysticality");
     assertTest(CommunityService.HotRes.run(hotResPrep, 1), "Hot Res");
     assertTest(CommunityService.Noncombat.run(nonCombatPrep, 1), "Noncombat");
-    assertTest(CommunityService.FamiliarWeight.run(famWtPrep, 25), "Familiar Weight");
+    assertTest(CommunityService.FamiliarWeight.run(famWtPrep, 28), "Familiar Weight");
     assertTest(CommunityService.WeaponDamage.run(WeaponPrep, 1), "Weapon Damage");
-    assertTest(CommunityService.SpellDamage.run(spellPrep, 25), "Spell Damage");
+    assertTest(CommunityService.SpellDamage.run(spellPrep, 18), "Spell Damage");
     assertTest(CommunityService.BoozeDrop.run(itemPrep, 1), "Item");
 } finally {
     propertyManager.resetAll();
@@ -99,10 +99,6 @@ try {
     cliExecute("mood default");
     Clan.join("The Average Clan");
     CommunityService.printLog("green");
-    print();
-    print(`That is a ${myDaycount()} day, ${myTurncount()} turn HCCS run. Nice work!`, `green`);
-    print();
-    resources.summarize();
 }
 
 // only do pvp and donate if we're done with all the quests
